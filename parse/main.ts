@@ -32,19 +32,21 @@ const client = new Client({
 })
 
 
-async function parse(docPath: string, outPath: string | undefined, debug: boolean) {
+async function parse(docPath: string, outPath: string | undefined, debug: boolean, outType: string) {
 	var sampleSQLtest = fs.readFileSync(docPath).toString()
 
 	const splitSQL: types.pAndSql = await lintPSQL(sampleSQLtest);
 	const stmts = await createStatements(splitSQL.sql,splitSQL.psql)
-
-	if (argv.rw != "stdout") {
+ 
+	if (outType === "stdout") {
 		fs.writeFileSync(path.join('./out', outPath || "./dog.json"), JSON.stringify(stmts,null,2))
+		process.stdout.write(`\n\nOUT: \n${JSON.stringify(stmts,null,2)}`)
+		process.exit(1)
 	}
 	else {
 		// do sql actions here
+		process.exit(1)
 	}
-	process.exit(1)
 }
 
 async function lintPSQL(document: string): Promise<types.pAndSql> { 
@@ -156,10 +158,10 @@ for (let i = 0; i < lintedDocument.length; i++) {
 	// console.log(argv.d)
 	if (argv.rw === "db") {
 		await client.connect()
-		if (argv.d) process.stdout.write(`DEBUG: Connected to database ${process.env.PG_HOST}\n`)
-		await parse(argv.i, argv.o, argv.d)
+		if (argv.d) process.stdout.write(`DEBUG: Connected to database ${process.env.PG_HOST}:${process.env.PG_PORT}\n`)
+		await parse(argv.i, argv.o, argv.d, argv.rw)
 	}
 	else {
-		await parse(argv.i, argv.o, argv.d)
+		await parse(argv.i, argv.o, argv.d, argv.rw)
 	}
 })()

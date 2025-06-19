@@ -23,7 +23,9 @@
 		"pglens": "./Build/parse/main.js"
 	},
 	"scripts": {
-		"build": "tsc -b && sudo npm link" 
+		"build": "tsc -b && sudo npm link",
+		"vanilla": "pglens -i ./in/sampleComplex.sql -o temp.json --rw db -d true",
+		"chocolate": "pglens -i ./in/sampleComplex.sql -o temp.json --rw stdout -d true"
 	},
 	"devDependencies": {
 		"@types/pg": "^8.15.4",
