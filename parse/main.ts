@@ -34,16 +34,23 @@ const client = new Client({
 
 async function parse(docPath: string, outPath: string | undefined, debug: boolean) {
 	var sampleSQLtest = fs.readFileSync(docPath).toString()
-	// console.log(sampleSQLtest)
+
 	const splitSQL: types.pAndSql = await lintPSQL(sampleSQLtest);
-	// console.log(splitSQL.sql)
 	const stmts = await createStatements(splitSQL.sql,splitSQL.psql)
-	fs.writeFileSync(path.join('./out', outPath || "./dog.json"), JSON.stringify(stmts,null,2))
+
+	if (argv.rw != "stdout") {
+		fs.writeFileSync(path.join('./out', outPath || "./dog.json"), JSON.stringify(stmts,null,2))
+	}
+	else {
+		// do sql actions here
+	}
 	process.exit(1)
 }
 
 async function lintPSQL(document: string): Promise<types.pAndSql> { 
+	if (argv.d) process.stdout.write(`DEBUG: Parsing out \\ statements\n`)
 	const backslashLines: string[] = document.match(/^\\.*$/gm) || [];
+	if (argv.d) process.stdout.write(`DEBUG: Regexifying document\n`)
 	const cleaned = document.replace(/^\\.*$/gm, '').replace(/^\s*[\r\n]/gm, '');
 	return ({sql: cleaned, psql: backslashLines})
 }
@@ -55,6 +62,7 @@ let insideSingleQuote = false;
 let previousChar = '';
 let statementStartIndex = 0;
 
+if (argv.d) process.stdout.write(`DEBUG: Starting splitter\n`)
 for (let i = 0; i < lintedDocument.length; i++) {
     const char = lintedDocument[i];
 
@@ -66,7 +74,7 @@ for (let i = 0; i < lintedDocument.length; i++) {
         const trimmedStatement = currentStatement.trim();
         const startOffset = lintedDocument.indexOf(trimmedStatement, statementStartIndex);
         const stmtLen = trimmedStatement.length;
-
+		if (argv.d) process.stdout.write(`DEBUG: Statement found! Adding\n`)
         try {
             let parsified = await parser.parseQuery(trimmedStatement);
             if (parsified.stmts === undefined) {
@@ -82,6 +90,7 @@ for (let i = 0; i < lintedDocument.length; i++) {
             };
             statements.push(stmtobj);
 			} catch (e: any) {
+				if (argv.d) process.stdout.write(`ERROR: ${e}\n`)
 				let stmtobj: types.stmtObj = {
 					stmt: undefined,
 					stmt_len: stmtLen,
@@ -105,7 +114,7 @@ for (let i = 0; i < lintedDocument.length; i++) {
 		const trimmedStatement = currentStatement.trim();
 		const startOffset = lintedDocument.indexOf(trimmedStatement, statementStartIndex);
 		const stmtLen = trimmedStatement.length;
-
+		if (argv.d) process.stdout.write(`DEBUG: Statement found! Adding\n`)
 		try {
 			let parsified = await parser.parseQuery(trimmedStatement);
 			if (parsified.stmts === undefined) {
@@ -121,6 +130,7 @@ for (let i = 0; i < lintedDocument.length; i++) {
 			};
 			statements.push(stmtobj);
 		} catch (e: any) {
+			if (argv.d) process.stdout.write(`ERROR: ${e}\n`)
 			let stmtobj: types.stmtObj = {
 				stmt: undefined,
 				stmt_len: stmtLen,
@@ -146,6 +156,7 @@ for (let i = 0; i < lintedDocument.length; i++) {
 	// console.log(argv.d)
 	if (argv.rw === "db") {
 		await client.connect()
+		if (argv.d) process.stdout.write(`DEBUG: Connected to database ${process.env.PG_HOST}\n`)
 		await parse(argv.i, argv.o, argv.d)
 	}
 	else {
