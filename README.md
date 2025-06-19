@@ -5,6 +5,7 @@
 - sudo npm i -g
 
 # Usage
+```
 npm run build
 pglens:
       --help     Show help                                             [boolean]
@@ -13,3 +14,4 @@ pglens:
   -o                                                                    [string]
       --rw                         [string] [required] [choices: "db", "stdout"]
   -d                                                  [boolean] [default: false]
+```

@@ -7,7 +7,7 @@ import * as fs from 'fs'
 import { Client } from 'pg'
 import * as dotenv from 'dotenv'
 import yargs, { boolean } from 'yargs'
-import { hideBin } from 'yargs/helpers';
+import path from 'path'
 
 const argv = yargs(process.argv.slice(2)).options({
   i: { type: 'string', demandOption: true },
@@ -38,7 +38,7 @@ async function parse(docPath: string, outPath: string | undefined, debug: boolea
 	const splitSQL: types.pAndSql = await lintPSQL(sampleSQLtest);
 	// console.log(splitSQL.sql)
 	const stmts = await createStatements(splitSQL.sql,splitSQL.psql)
-	fs.writeFileSync(outPath || "./dog.json", JSON.stringify(stmts,null,2))
+	fs.writeFileSync(path.join('./out', outPath || "./dog.json"), JSON.stringify(stmts,null,2))
 	process.exit(1)
 }
 

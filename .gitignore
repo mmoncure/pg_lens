@@ -32,7 +32,7 @@ jspm\_packages/
 # Next.js build output
 
 .next/
-out/
+Build/
 
 # Nuxt.js build / generate output
 

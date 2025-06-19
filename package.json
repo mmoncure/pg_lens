@@ -20,7 +20,7 @@
 		"yargs": "^18.0.0"
 	},
 	"bin": {
-		"pglens": "./parse/main.js"
+		"pglens": "./Build/parse/main.js"
 	},
 	"scripts": {
 		"build": "tsc -b && sudo npm link" 
