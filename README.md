@@ -20,7 +20,7 @@ pglens:
 -d                                                  [boolean] [default: false]
 ```
 
-#Dependencies
+# Dependencies
 - "dotenv": "^16.5.0",
 - "libpg-query": "^17.1.1",
 - "pg": "^8.16.0",
