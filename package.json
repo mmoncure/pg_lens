@@ -1,0 +1,32 @@
+{
+	"name": "pg_lens",
+	"description": "we'll see I guess",
+	"version": "1.0.0",
+	"author": "Microsoft Corporation",
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Microsoft/vscode-extension-samples"
+	},
+	"dependencies": {
+		"dotenv": "^16.5.0",
+		"libpg-query": "^17.1.1",
+		"pg": "^8.16.0",
+		"typescript": "^5.8.3",
+		"util": "^0.12.5",
+		"yargs": "^18.0.0"
+	},
+	"bin": {
+		"pglens": "./parse/main.js"
+	},
+	"scripts": {
+		"build": "tsc -b && sudo npm link" 
+	},
+	"devDependencies": {
+		"@types/pg": "^8.15.4",
+		"@types/yargs": "^17.0.33"
+	}
+}

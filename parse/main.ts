@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as parser from 'libpg-query'
 import * as types from '../types'
 import { create } from 'domain';
@@ -5,6 +6,16 @@ import { inspect } from 'util'
 import * as fs from 'fs'
 import { Client } from 'pg'
 import * as dotenv from 'dotenv'
+import yargs, { boolean } from 'yargs'
+import { hideBin } from 'yargs/helpers';
+
+const argv = yargs(process.argv.slice(2)).options({
+  i: { type: 'string', demandOption: true },
+  o: { type: 'string' },
+  rw: { type: 'string', choices: ['db', 'stdout'], demandOption: true },
+  d: { type: 'boolean', default: false}
+}).parseSync();
+
 
 dotenv.config({ path: "/Users/maxim.jovanovic/Desktop/testlsp/.env"});
 
@@ -21,13 +32,13 @@ const client = new Client({
 })
 
 
-async function parse(document: string) {
-	var sampleSQLtest = fs.readFileSync('../sampleComplex.sql').toString()
-	console.log(sampleSQLtest)
+async function parse(docPath: string, outPath: string | undefined, debug: boolean) {
+	var sampleSQLtest = fs.readFileSync(docPath).toString()
+	// console.log(sampleSQLtest)
 	const splitSQL: types.pAndSql = await lintPSQL(sampleSQLtest);
 	// console.log(splitSQL.sql)
 	const stmts = await createStatements(splitSQL.sql,splitSQL.psql)
-	fs.writeFileSync("./dog.json", JSON.stringify(stmts,null,2))
+	fs.writeFileSync(outPath || "./dog.json", JSON.stringify(stmts,null,2))
 	process.exit(1)
 }
 
@@ -38,7 +49,7 @@ async function lintPSQL(document: string): Promise<types.pAndSql> {
 }
 
 async function createStatements(lintedDocument: string, psql: string[]): Promise<types.stmtArr> {
-	const statements = [];
+const statements: types.stmtObj[] = [];
 let currentStatement = '';
 let insideSingleQuote = false;
 let previousChar = '';
@@ -129,6 +140,15 @@ for (let i = 0; i < lintedDocument.length; i++) {
 
 // testing 
 (async () => {
-	await client.connect()
-	await parse("test")
+	// console.log(argv.i)
+	// console.log(argv.o)
+	// console.log(argv.rw)
+	// console.log(argv.d)
+	if (argv.rw === "db") {
+		await client.connect()
+		await parse(argv.i, argv.o, argv.d)
+	}
+	else {
+		await parse(argv.i, argv.o, argv.d)
+	}
 })()
