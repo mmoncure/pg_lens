@@ -40,7 +40,7 @@ async function parse(docPath: string, outPath: string | undefined, debug: boolea
  
 	if (outType === "stdout") {
 		fs.writeFileSync(path.join('./out', outPath || "./dog.json"), JSON.stringify(stmts,null,2))
-		process.stdout.write(`\n\nOUT: \n${JSON.stringify(stmts,null,2)}`)
+		process.stdout.write(`OUT: \n${JSON.stringify(stmts,null,2)}`)
 		process.exit(1)
 	}
 	else {

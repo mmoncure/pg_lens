@@ -1,0 +1,1013 @@
+{
+  "statements": [
+    {
+      "stmt": {
+        "CreateStmt": {
+          "relation": {
+            "relname": "lease",
+            "inh": true,
+            "relpersistence": "p",
+            "location": 13
+          },
+          "tableElts": [
+            {
+              "ColumnDef": {
+                "colname": "pms_company_id",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "text"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 38
+                },
+                "is_local": true,
+                "location": 23
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "pms_property_id",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "text"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 62
+                },
+                "is_local": true,
+                "location": 46
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "pms_tenant_id",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "text"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 84
+                },
+                "is_local": true,
+                "location": 70
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "pms_unit_id",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "text"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 104
+                },
+                "is_local": true,
+                "location": 92
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "pms_lease_id",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "text"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 150
+                },
+                "is_local": true,
+                "constraints": [
+                  {
+                    "Constraint": {
+                      "contype": "CONSTR_NOTNULL",
+                      "location": 155
+                    }
+                  }
+                ],
+                "location": 137
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "unit_type",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "text"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 317
+                },
+                "is_local": true,
+                "constraints": [
+                  {
+                    "Constraint": {
+                      "contype": "CONSTR_NOTNULL",
+                      "location": 322
+                    }
+                  }
+                ],
+                "location": 307
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "unit_sf",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "pg_catalog"
+                      }
+                    },
+                    {
+                      "String": {
+                        "sval": "int4"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 513
+                },
+                "is_local": true,
+                "location": 505
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "renewal",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "bool"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 528
+                },
+                "is_local": true,
+                "location": 520
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "executed_date",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 550
+                },
+                "is_local": true,
+                "location": 536
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "mtm_indicated",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 695
+                },
+                "is_local": true,
+                "location": 681
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "scheduled_lease_end_date",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 755
+                },
+                "is_local": true,
+                "location": 730
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "adjusted_lease_end_date",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 787
+                },
+                "is_local": true,
+                "location": 763
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "contracted",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "daterange"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 893
+                },
+                "is_local": true,
+                "location": 882
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "cancelled_date",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 945
+                },
+                "is_local": true,
+                "location": 930
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "gross_rent",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "pg_catalog"
+                      }
+                    },
+                    {
+                      "String": {
+                        "sval": "int4"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 964
+                },
+                "is_local": true,
+                "location": 953
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "effective_rent",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "pg_catalog"
+                      }
+                    },
+                    {
+                      "String": {
+                        "sval": "int4"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1034
+                },
+                "is_local": true,
+                "location": 1019
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "suspicious_tradeout",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "bool"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1108
+                },
+                "is_local": true,
+                "location": 1088
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "suspicious_gross_rent",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "bool"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1138
+                },
+                "is_local": true,
+                "location": 1116
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "suspicious_effective_rent",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "bool"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1172
+                },
+                "is_local": true,
+                "location": 1146
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "first_bill_date_for_deposit_ins",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1212
+                },
+                "is_local": true,
+                "location": 1180
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "created",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "timestamptz"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1228
+                },
+                "is_local": true,
+                "constraints": [
+                  {
+                    "Constraint": {
+                      "contype": "CONSTR_DEFAULT",
+                      "raw_expr": {
+                        "FuncCall": {
+                          "funcname": [
+                            {
+                              "String": {
+                                "sval": "now"
+                              }
+                            }
+                          ],
+                          "funcformat": "COERCE_EXPLICIT_CALL",
+                          "location": 1248
+                        }
+                      },
+                      "location": 1240
+                    }
+                  }
+                ],
+                "location": 1220
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "updated",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "timestamptz"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1265
+                },
+                "is_local": true,
+                "location": 1257
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "imputation_flags",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "imputation_flag_t"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "arrayBounds": [
+                    {
+                      "Integer": {
+                        "ival": -1
+                      }
+                    }
+                  ],
+                  "location": 1297
+                },
+                "is_local": true,
+                "location": 1280
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "waiver_eligible",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "bool"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1336
+                },
+                "is_local": true,
+                "location": 1320
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "has_ledger",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "bool"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1355
+                },
+                "is_local": true,
+                "location": 1344
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "has_billing",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "bool"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1375
+                },
+                "is_local": true,
+                "location": 1363
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "rejection_flags",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "rejection_flag_t"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "arrayBounds": [
+                    {
+                      "Integer": {
+                        "ival": -1
+                      }
+                    }
+                  ],
+                  "location": 1399
+                },
+                "is_local": true,
+                "location": 1383
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "effective_rent_lease_start",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "pg_catalog"
+                      }
+                    },
+                    {
+                      "String": {
+                        "sval": "int4"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1448
+                },
+                "is_local": true,
+                "location": 1421
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "effective_rent_full",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "pg_catalog"
+                      }
+                    },
+                    {
+                      "String": {
+                        "sval": "int4"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1475
+                },
+                "is_local": true,
+                "location": 1455
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "effective_rent_ledger_60",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "pg_catalog"
+                      }
+                    },
+                    {
+                      "String": {
+                        "sval": "int4"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1507
+                },
+                "is_local": true,
+                "location": 1482
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "term",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "pg_catalog"
+                      }
+                    },
+                    {
+                      "String": {
+                        "sval": "int4"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1519
+                },
+                "is_local": true,
+                "location": 1514
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "last_posted_fetch",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1544
+                },
+                "is_local": true,
+                "location": 1526
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "waiver_charge_code",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "text"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1571
+                },
+                "is_local": true,
+                "location": 1552
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "min_charge_code_date",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1600
+                },
+                "is_local": true,
+                "location": 1579
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "max_charge_code_date",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "date"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1629
+                },
+                "is_local": true,
+                "location": 1608
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "charge_transaction_type",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "text"
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1661
+                },
+                "is_local": true,
+                "location": 1637
+              }
+            },
+            {
+              "ColumnDef": {
+                "colname": "waiver_charge_code_amount",
+                "typeName": {
+                  "names": [
+                    {
+                      "String": {
+                        "sval": "pg_catalog"
+                      }
+                    },
+                    {
+                      "String": {
+                        "sval": "numeric"
+                      }
+                    }
+                  ],
+                  "typmods": [
+                    {
+                      "A_Const": {
+                        "ival": {
+                          "ival": 13
+                        },
+                        "location": 1703
+                      }
+                    },
+                    {
+                      "A_Const": {
+                        "ival": {
+                          "ival": 2
+                        },
+                        "location": 1706
+                      }
+                    }
+                  ],
+                  "typemod": -1,
+                  "location": 1695
+                },
+                "is_local": true,
+                "location": 1669
+              }
+            },
+            {
+              "Constraint": {
+                "contype": "CONSTR_PRIMARY",
+                "keys": [
+                  {
+                    "String": {
+                      "sval": "pms_company_id"
+                    }
+                  },
+                  {
+                    "String": {
+                      "sval": "pms_property_id"
+                    }
+                  },
+                  {
+                    "String": {
+                      "sval": "pms_lease_id"
+                    }
+                  }
+                ],
+                "location": 1712
+              }
+            },
+            {
+              "Constraint": {
+                "contype": "CONSTR_EXCLUSION",
+                "deferrable": true,
+                "initdeferred": true,
+                "exclusions": [
+                  {
+                    "List": {
+                      "items": [
+                        {
+                          "IndexElem": {
+                            "name": "pms_company_id",
+                            "ordering": "SORTBY_DEFAULT",
+                            "nulls_ordering": "SORTBY_NULLS_DEFAULT"
+                          }
+                        },
+                        {
+                          "List": {
+                            "items": [
+                              {
+                                "String": {
+                                  "sval": "="
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "List": {
+                      "items": [
+                        {
+                          "IndexElem": {
+                            "name": "pms_property_id",
+                            "ordering": "SORTBY_DEFAULT",
+                            "nulls_ordering": "SORTBY_NULLS_DEFAULT"
+                          }
+                        },
+                        {
+                          "List": {
+                            "items": [
+                              {
+                                "String": {
+                                  "sval": "="
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "List": {
+                      "items": [
+                        {
+                          "IndexElem": {
+                            "name": "pms_unit_id",
+                            "ordering": "SORTBY_DEFAULT",
+                            "nulls_ordering": "SORTBY_NULLS_DEFAULT"
+                          }
+                        },
+                        {
+                          "List": {
+                            "items": [
+                              {
+                                "String": {
+                                  "sval": "="
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "List": {
+                      "items": [
+                        {
+                          "IndexElem": {
+                            "name": "contracted",
+                            "ordering": "SORTBY_DEFAULT",
+                            "nulls_ordering": "SORTBY_NULLS_DEFAULT"
+                          }
+                        },
+                        {
+                          "List": {
+                            "items": [
+                              {
+                                "String": {
+                                  "sval": "&&"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "access_method": "gist",
+                "where_clause": {
+                  "NullTest": {
+                    "arg": {
+                      "ColumnRef": {
+                        "fields": [
+                          {
+                            "String": {
+                              "sval": "rejection_flags"
+                            }
+                          }
+                        ],
+                        "location": 1908
+                      }
+                    },
+                    "nulltesttype": "IS_NULL",
+                    "location": 1924
+                  }
+                },
+                "location": 1774
+              }
+            },
+            {
+              "Constraint": {
+                "contype": "CONSTR_FOREIGN",
+                "initially_valid": true,
+                "pktable": {
+                  "relname": "property",
+                  "inh": true,
+                  "relpersistence": "p",
+                  "location": 2024
+                },
+                "fk_attrs": [
+                  {
+                    "String": {
+                      "sval": "pms_company_id"
+                    }
+                  },
+                  {
+                    "String": {
+                      "sval": "pms_property_id"
+                    }
+                  }
+                ],
+                "fk_matchtype": "s",
+                "fk_upd_action": "c",
+                "fk_del_action": "c",
+                "location": 1966
+              }
+            }
+          ],
+          "oncommit": "ONCOMMIT_NOOP"
+        }
+      },
+      "stmt_len": 2074,
+      "stmt_location": 0,
+      "error": false
+    },
+    {
+      "stmt": {
+        "IndexStmt": {
+          "relation": {
+            "relname": "lease",
+            "inh": true,
+            "relpersistence": "p",
+            "location": 16
+          },
+          "accessMethod": "btree",
+          "indexParams": [
+            {
+              "IndexElem": {
+                "name": "pms_company_id",
+                "ordering": "SORTBY_DEFAULT",
+                "nulls_ordering": "SORTBY_NULLS_DEFAULT"
+              }
+            },
+            {
+              "IndexElem": {
+                "name": "pms_property_id",
+                "ordering": "SORTBY_DEFAULT",
+                "nulls_ordering": "SORTBY_NULLS_DEFAULT"
+              }
+            },
+            {
+              "IndexElem": {
+                "name": "pms_tenant_id",
+                "ordering": "SORTBY_DEFAULT",
+                "nulls_ordering": "SORTBY_NULLS_DEFAULT"
+              }
+            }
+          ]
+        }
+      },
+      "stmt_len": 69,
+      "stmt_location": 2078,
+      "error": false
+    }
+  ],
+  "psql": []
+}
