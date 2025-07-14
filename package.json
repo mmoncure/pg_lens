@@ -1,34 +1,72 @@
 {
-	"name": "pg_lens",
-	"description": "we'll see I guess",
-	"version": "1.0.0",
+	"name": "lsp-sample",
+	"description": "A language server example",
 	"author": "Microsoft Corporation",
 	"license": "MIT",
-	"engines": {
-		"node": "*"
-	},
+	"version": "1.0.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Microsoft/vscode-extension-samples"
 	},
-	"dependencies": {
-		"dotenv": "^16.5.0",
-		"libpg-query": "^17.1.1",
-		"pg": "^8.16.0",
-		"typescript": "^5.8.3",
-		"util": "^0.12.5",
-		"yargs": "^18.0.0"
+	"publisher": "vscode-samples",
+	"categories": [],
+	"keywords": [
+		"multi-root ready"
+	],
+	"engines": {
+		"vscode": "^1.75.0"
 	},
-	"bin": {
-		"pglens": "./Build/parse/main.js"
+	"activationEvents": [
+		"onLanguage:plaintext"
+	],
+	"main": "./client/out/extension",
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Example configuration",
+			"properties": {
+				"languageServerExample.maxNumberOfProblems": {
+					"scope": "resource",
+					"type": "number",
+					"default": 100,
+					"description": "Controls the maximum number of problems produced by the server."
+				},
+				"languageServerExample.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "off",
+					"description": "Traces the communication between VS Code and the language server."
+				}
+			}
+		}
 	},
 	"scripts": {
-		"build": "tsc -b && sudo npm link",
-		"vanilla": "pglens -i ./in/sampleComplex.sql -o temp.json --rw db -d true",
-		"chocolate": "pglens -i ./in/sampleComplex.sql -o temp.json --rw stdout -d true"
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"lint": "eslint",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"test": "sh ./scripts/e2e.sh"
 	},
 	"devDependencies": {
-		"@types/pg": "^8.15.4",
-		"@types/yargs": "^17.0.33"
+		"@eslint/js": "^9.13.0",
+		"@stylistic/eslint-plugin": "^2.9.0",
+		"@types/mocha": "^10.0.6",
+		"@types/node": "^20",
+		"eslint": "^9.13.0",
+		"mocha": "^10.3.0",
+		"typescript": "^5.8.2",
+		"typescript-eslint": "^8.26.0"
+	},
+	"dependencies": {
+		"@derekstride/tree-sitter-sql": "^0.3.8",
+		"dotenv": "^17.1.0",
+		"pg": "^8.16.3",
+		"tree-sitter": "^0.21.1"
 	}
 }
