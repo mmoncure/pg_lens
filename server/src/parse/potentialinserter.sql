@@ -149,3 +149,9 @@ SELECT parse_this($$
     oncommit: 'ONCOMMIT_NOOP'
   }
 }$$::JSON;
+
+function_name
+function_return_type
+function_arg_name
+function_arg_type
+function_arg_default

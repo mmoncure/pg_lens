@@ -9,7 +9,7 @@ export {createContext} from './createContext' // rexport
 import { create } from 'domain';
 import { inspect } from 'util'
 import * as fs from 'fs'
-import { Client } from 'pg'
+import { Client, PoolClient } from 'pg'
 import * as dotenv from 'dotenv'
 import yargs, { boolean } from 'yargs'
 import * as path from 'path'
@@ -21,6 +21,12 @@ const parser = new ParserTS();
 parser.setLanguage(SQL);
 
 let argv: any;
+
+const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'` // change ASAP
+const insertText = `
+	INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
+
 
 try {
 	argv = yargs(process.argv.slice(2)).options({
@@ -47,7 +53,11 @@ let munchedSQL: any = {
 	splitstmts: []
 }
 
-export async function parse(client: Client, doc: string, outPath: string | undefined, debug: boolean, outType: string) {
+// export async function delAll(client: Client) {
+// 	let pd = await client.query(preInsertDelete)
+// }
+
+export async function parse(client: PoolClient, doc: string, outPath: string | undefined, debug: boolean, outType: string) {
 	// fs.writeFileSync('../stdout/dog.json', "SHIT")
 	munchedSQL = {
 		splitstmts: []
@@ -56,11 +66,24 @@ export async function parse(client: Client, doc: string, outPath: string | undef
 
 	// parse all SQL with tree-sitter
 
-	const tree   = parser.parse(doc);
+	const tree = parser.parse(doc);
 	jsonify(tree.rootNode);
+	
+	// console.log('parse')
+	try {
+		// add DDL to db (CREATE TABLE for now)
+		await client.query('BEGIN')
+		await client.query(preInsertDelete)
+		await insertTableColumns(client,munchedSQL,"public")
+		await client.query('COMMIT')
+		// await client.release()
 
-	// add DDL to db (CREATE TABLE for now)
-	insertTableColumns(client,munchedSQL,"public")
+		// console.log('parse done')
+	}
+	catch (e){
+		// console.log(e)
+		await client.query('ROLLBACK')
+	}
 
 	// await client.end()
 
@@ -105,14 +128,18 @@ function collectNodes(node: types.stmtTreeSit, predicate: Function /* apparently
 	return results;
 }
 
-async function insertTableColumns(client: Client, munchedSQL: any, defaultSchema = 'public') {
+async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSchema = 'public') {
 	if (!munchedSQL.splitstmts || !munchedSQL.splitstmts.length) return;
+
+	// let pd = await client.query(preInsertDelete)
 
 	const stmts = munchedSQL.splitstmts[0].nextstmt;
 	// console.log(stmts.length)
 
-	// multi-statement handling
+	
 
+	// multi-statement handling
+	// if (pd) {
 	for(const stmtObj of stmts) {
 
 		if (stmtObj.parsed!==';') { // added as its own leaf for some reason... not going to remove from 
@@ -126,21 +153,15 @@ async function insertTableColumns(client: Client, munchedSQL: any, defaultSchema
 			const columns = collectNodes(stmtObj, (n: { parsed: string; }) => n.parsed === 'column_definition');
 			if (!columns.length) return;
 
-			const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public';` // change ASAP
-
-			try {
-				// let pd = await client.query(preInsertDelete)
-			}
-			catch (e: any) {
-				console.log("Probably an SQL error, but logged nonetheless")
-				console.error(e)
-			}
+			// try {
+			// 	let pd = await client.query(preInsertDelete)
+			// }
+			// catch (e: any) {
+			// 	console.log("Probably an SQL error, but logged nonetheless")
+			// 	console.error(e)
+			// }
 			// console.log(idents[0].id)
 
-			const insertText = `
-
-				INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
 
 			for (const leaf of columns) {
 				const children = leaf.nextstmt || [];
@@ -160,17 +181,21 @@ async function insertTableColumns(client: Client, munchedSQL: any, defaultSchema
 				const defIdx = children.findIndex((n: { parsed: string; }) => n.parsed === 'keyword_default');
 				const colDefault = defIdx >= 0 && children[defIdx + 1] ? children[defIdx + 1].id : null;
 				try {
+					// await client.query('BEGIN')
 					// console.log(colName)
-					// let g = await client.query(insertText, [defaultSchema, idents[0].id, colName, colType, hasNotNull, colDefault, stmtObj.id, startpos, endpos]);
+					let g = await client.query(insertText, [defaultSchema, idents[0].id, colName, colType, hasNotNull, colDefault, stmtObj.id, startpos, endpos]);
 					// console.log(g)
+					// await client.query('COMMIT')
+					// let pd = await client.query(preInsertDelete)
 				}
 				catch (e: any) {
 					// console.log("Probably an SQL error, but logged nonetheless")
-					// console.error(e)
+					throw e
 				}
 			}
 		}
 	}
+// }
 }
 /**
  * Recursively checks whether any node in the AST has

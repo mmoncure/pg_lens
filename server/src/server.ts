@@ -17,10 +17,14 @@ import {
 	InitializeResult,
 	DocumentDiagnosticReportKind,
 	type DocumentDiagnosticReport,
-	CompletionParams
+	CompletionParams,
+	TextDocumentPositionParams,
+	DocumentDiagnosticParams,
+	DidChangeTextDocumentNotification,
+	DidChangeTextDocumentParams
 } from 'vscode-languageserver/node';
 
-import { Client } from 'pg'
+import { Pool, PoolClient } from 'pg'
 
 import {
 	TextDocument
@@ -31,7 +35,7 @@ import * as parser from 'libpg-query'
 import * as types from './types'
 import * as pg_lens from './parse/main'
 
-const client = new Client({
+const pool = new Pool({
 	user: process.env.PG_USER,
 	password: process.env.PG_PASS,
 	host: process.env.PG_HOST,
@@ -39,9 +43,14 @@ const client = new Client({
 	database: process.env.DB_NAME,
 });
 
+let clientParse: PoolClient;
+let clientCompletion: PoolClient;
+
+
 (async () => {
   try {
-    await client.connect();          // ← only once, here
+    clientParse = await pool.connect();
+	clientCompletion = await pool.connect();
   } catch (err) {
     console.error('Failed to connect to Postgres', err);
     process.exit(1);
@@ -82,7 +91,7 @@ connection.onInitialize((params: InitializeParams) => {
 			// Tell the client that this server supports code completion.
 			completionProvider: {
 				resolveProvider: true,
-				triggerCharacters: [' ', '(', ',']
+				triggerCharacters: [' ']
 			},
 			diagnosticProvider: {
 				interFileDependencies: false,
@@ -167,7 +176,7 @@ connection.languages.diagnostics.on(async (params) => {
 	if (document !== undefined) {
 		return {
 			kind: DocumentDiagnosticReportKind.Full,
-			items: await validateTextDocument(document)
+			items: await validateTextDocument(params, document)
 		} satisfies DocumentDiagnosticReport;
 	} else {
 		// We don't know the document. We can either try to read it from disk
@@ -185,17 +194,32 @@ connection.languages.diagnostics.on(async (params) => {
 // 	validateTextDocument(change.document);
 // });
 
-async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
+// async function contextTree(params: DocumentDiagnosticParams): Promise<types.stmtTreeSit> {
+// 	const doc = documents.get(params.textDocument.uri)?.getText()
+// 	const { line, character } = params.;
+// 	let found = false
+// 	let i = doc.offsetAt(textDocument.position)
+// 	for (i; i > 0 && found === false; i--) {
+// 		if (txt[i] === ';') found = true;
+// 		// console.log(`${txt[i]} == ; @ ${i}`)
+// 	}
+// }
+
+async function validateTextDocument(params: DocumentDiagnosticParams, textDocument: TextDocument): Promise<Diagnostic[]> {
 	// In this simple example we get the settings for every validate run.
 	const settings = await getDocumentSettings(textDocument.uri);
 	// console.log(settings)
 
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	const text = textDocument.getText();
-	// console.log(text)
-	let f: any = await pg_lens.parse(client, text,"",true,"stdout")
 
-	console.log(JSON.stringify(f,null,2))
+	
+	// console.log(text)
+	// let g: any = await pg_lens.delAll(client);
+	// let g = (await pg_lens.createContext(text.substring(i+2,doc.offsetAt(params.position)), client))
+	// let f: any = await pg_lens.parse(client, text,"",true,"stdout")
+
+	// console.log(JSON.stringify(f,null,2))
 
 	const pattern = /\b[A-Z]{2,}\b/g;
 	let m: RegExpExecArray | null;
@@ -268,8 +292,14 @@ connection.onDidChangeWatchedFiles(_change => {
 	connection.console.log('We received a file change event');
 });
 
+
 connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem[]> => {
 	const doc = documents.get(params.textDocument.uri);
+
+	// console.log(doc)
+
+	// let f: any = await pg_lens.parse(clientCompletion, doc?.getText() || "","",true,"stdout")
+
 	if (!doc) return [];
 
 	// GENERIC
@@ -305,9 +335,9 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 	}
 
 	if (found) { // more than one statement, so use current
-		console.log(`${i} => ${doc.offsetAt(params.position)}`)
-		console.log(txt.substring(i+2,doc.offsetAt(params.position)))
-		let g = (await pg_lens.createContext(txt.substring(i+2,doc.offsetAt(params.position))))
+		// console.log(`${i} => ${doc.offsetAt(params.position)}`)
+		// console.log(txt.substring(i+2,doc.offsetAt(params.position)))
+		let g = (await pg_lens.createContext(txt.substring(i+2,doc.offsetAt(params.position)), clientCompletion))
 
 		/* incomplete statement results in error:
 				SELECT *
@@ -334,7 +364,7 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 		// ON and SELECT don't ERROR, all others create ERROR (ERROR = final term, NOERROR = leaf)
 
 		let tree = g.nextstmt[0]
-		console.log(JSON.stringify(tree,null,2))
+		// console.log(JSON.stringify(tree,null,2))
 		
 		// search for table
 
@@ -373,17 +403,19 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 
 	const m = /(?:^|\s)(test)\.$/.exec(beforeCursor);
 	// console.log(m != null ? m['1']: 0)
-	console.log("tb: ", table_ex)
-	console.log("on: ", check_on)
-	console.log("se: ", check_se)
-	console.log("ob: ", check_ob)
-	console.log("gb: ", check_gb)
-	console.log("pb: ", check_pb)
-	console.log("po: ", check_po)
-	console.log("wh: ", check_wh)
-	console.log("fr: ", check_fr)
+	// console.log("tb: ", table_ex)
+	// console.log("on: ", check_on)
+	// console.log("se: ", check_se)
+	// console.log("ob: ", check_ob)
+	// console.log("gb: ", check_gb)
+	// console.log("pb: ", check_pb)
+	// console.log("po: ", check_po)
+	// console.log("wh: ", check_wh)
+	// console.log("fr: ", check_fr)
 	if (check_se) {
-		var cols = (await client.query(`SELECT column_name FROM table_columns`)).rows
+		await clientCompletion.query('BEGIN')
+		var cols = (await clientCompletion.query(`SELECT column_name FROM table_columns`)).rows
+		await clientCompletion.query('COMMIT')
 		var retval: CompletionItem[] = [
 			{
 				label: "*",
@@ -400,12 +432,14 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 				insertText: x.column_name
 			})
 		})
-		console.log(retval)
+		// console.log(retval)
 		return retval;
 	}
 	else if (check_wh && table_ex) {
+		await clientCompletion.query('BEGIN')
 		let test = `SELECT column_name FROM table_columns WHERE table_name=$1`
-		var cols = (await client.query(test,[table_ex])).rows
+		var cols = (await clientCompletion.query(test,[table_ex])).rows
+		await clientCompletion.query('COMMIT')
 		var retval: CompletionItem[] = []
 		cols.map(x => {
 			retval.push({
@@ -415,30 +449,32 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 				insertText: x.column_name
 			})
 		})
-		console.log(retval)
+		// console.log(retval)
 		return retval;
 	}
 	else {
-		return [
-		{
-			label: 'Not',
-			kind: CompletionItemKind.Text,
-			detail: 'lol',
-			insertText: 'Not'
-		},
-		{
-			label: 'Very',
-			kind: CompletionItemKind.Text,
-			insertText: 'Very'
-		},
-		{
-			label: 'Swag',
-			kind: CompletionItemKind.Text,
-			insertText: 'Swag'
-		}
-		];
+		// FOR NOW NOTHING!
+		return []
+		// return [
+		// {
+		// 	label: 'Not',
+		// 	kind: CompletionItemKind.Text,
+		// 	detail: 'lol',
+		// 	insertText: 'Not'
+		// },
+		// {
+		// 	label: 'Very',
+		// 	kind: CompletionItemKind.Text,
+		// 	insertText: 'Very'
+		// },
+		// {
+		// 	label: 'Swag',
+		// 	kind: CompletionItemKind.Text,
+		// 	insertText: 'Swag'
+		// }
+		// ];
 	}
-	});
+});
 
 // This handler resolves additional information for the item selected in
 // the completion list.
@@ -451,8 +487,22 @@ connection.onCompletionResolve(
 	}
 );
 
-// Make the text document manager listen on the connection
-// for open, change and close text document events
+documents.onDidChangeContent(async (params) => {
+	if (clientParse !== undefined) {
+		try {
+			const doc = params.document.getText()
+			let f: any = await pg_lens.parse(clientParse, doc,"",true,"stdout")
+		} 
+		catch (e) {
+			console.log("Parsing failed: ");
+			console.error(e)
+		}
+	}
+	else {
+		console.log("waiting for db con...")
+	}
+});
+
 documents.listen(connection);
 
 // Listen on the connection

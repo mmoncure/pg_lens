@@ -1,248 +1,54 @@
 {
-  "splitstmts": [
+  "coords": "2:0 - 2:7",
+  "parsed": "program",
+  "id": "SELECT ",
+  "nextstmt": [
     {
-      "coords": "0:0 - 26:12",
-      "parsed": "program",
-      "id": "CREATE TABLE products (\\n  product_id   INT             NOT NULL PRIMARY KEY,\\n  sku          CHAR(8)         NOT NULL UNIQUE,\\n  name         VARCHAR(100)    NOT NULL,\\n  description  TEXT,\\n  doggy        VARCHAR(100),   NOT NULL UNIQUE,\\n  category_id  INT             NOT NULL,\\n  price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00,\\n  status       VARCHAR(20)     NOT NULL DEFAULT 'active',\\n  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,\\n  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP\\n);\\n\\n-- SELECT * FROM jamal;\\n\\ncreate or replace function public.fn()\\n  returns int\\n  language plpgsql\\nas $function$\\ndeclare\\n  one int;\\n  two text := (select 'hello');\\n  three text := 'world';\\nbegin \\n  return 1;\\nend;\\n$function$; ",
+      "coords": "2:0 - 2:6",
+      "parsed": "statement",
+      "id": "SELECT",
       "nextstmt": [
         {
-          "coords": "0:0 - 11:1",
-          "parsed": "statement",
-          "id": "CREATE TABLE products (\\n  product_id   INT             NOT NULL PRIMARY KEY,\\n  sku          CHAR(8)         NOT NULL UNIQUE,\\n  name         VARCHAR(100)    NOT NULL,\\n  description  TEXT,\\n  doggy        VARCHAR(100),   NOT NULL UNIQUE,\\n  category_id  INT             NOT NULL,\\n  price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00,\\n  status       VARCHAR(20)     NOT NULL DEFAULT 'active',\\n  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,\\n  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP\\n)",
+          "coords": "2:0 - 2:6",
+          "parsed": "select",
+          "id": "SELECT",
           "nextstmt": [
             {
-              "coords": "0:0 - 11:1",
-              "parsed": "create_table",
-              "id": "CREATE TABLE products (\\n  product_id   INT             NOT NULL PRIMARY KEY,\\n  sku          CHAR(8)         NOT NULL UNIQUE,\\n  name         VARCHAR(100)    NOT NULL,\\n  description  TEXT,\\n  doggy        VARCHAR(100),   NOT NULL UNIQUE,\\n  category_id  INT             NOT NULL,\\n  price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00,\\n  status       VARCHAR(20)     NOT NULL DEFAULT 'active',\\n  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,\\n  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP\\n)",
+              "coords": "2:0 - 2:6",
+              "parsed": "keyword_select",
+              "id": "SELECT",
+              "nextstmt": []
+            },
+            {
+              "coords": "2:6 - 2:6",
+              "parsed": "select_expression",
+              "id": "",
               "nextstmt": [
                 {
-                  "coords": "0:0 - 0:6",
-                  "parsed": "keyword_create",
-                  "id": "CREATE",
-                  "nextstmt": []
-                },
-                {
-                  "coords": "0:7 - 0:12",
-                  "parsed": "keyword_table",
-                  "id": "TABLE",
-                  "nextstmt": []
-                },
-                {
-                  "coords": "0:13 - 0:21",
-                  "parsed": "object_reference",
-                  "id": "products",
+                  "coords": "2:6 - 2:6",
+                  "parsed": "term",
+                  "id": "",
                   "nextstmt": [
                     {
-                      "coords": "0:13 - 0:21",
-                      "parsed": "identifier",
-                      "id": "products",
-                      "nextstmt": []
-                    }
-                  ]
-                },
-                {
-                  "coords": "0:22 - 11:1",
-                  "parsed": "column_definitions",
-                  "id": "(\\n  product_id   INT             NOT NULL PRIMARY KEY,\\n  sku          CHAR(8)         NOT NULL UNIQUE,\\n  name         VARCHAR(100)    NOT NULL,\\n  description  TEXT,\\n  doggy        VARCHAR(100),   NOT NULL UNIQUE,\\n  category_id  INT             NOT NULL,\\n  price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00,\\n  status       VARCHAR(20)     NOT NULL DEFAULT 'active',\\n  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,\\n  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP\\n)",
-                  "nextstmt": [
-                    {
-                      "coords": "0:22 - 0:23",
-                      "parsed": "(",
-                      "id": "(",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "1:2 - 1:51",
-                      "parsed": "column_definition",
-                      "id": "product_id   INT             NOT NULL PRIMARY KEY",
+                      "coords": "2:6 - 2:6",
+                      "parsed": "literal",
+                      "id": "",
                       "nextstmt": [
                         {
-                          "coords": "1:2 - 1:12",
+                          "coords": "2:6 - 2:6",
                           "parsed": "identifier",
-                          "id": "product_id",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "1:15 - 1:18",
-                          "parsed": "int",
-                          "id": "INT",
-                          "nextstmt": [
-                            {
-                              "coords": "1:15 - 1:18",
-                              "parsed": "keyword_int",
-                              "id": "INT",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-       … "parsed": "identifier",
-                      "id": "_start_position",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "3:18 - 3:21",
-                      "parsed": "int",
-                      "id": "INT",
-                      "nextstmt": [
-                        {
-                          "coords": "3:18 - 3:21",
-                          "parsed": "keyword_int",
-                          "id": "INT",
+                          "id": "",
                           "nextstmt": []
                         }
                       ]
                     }
                   ]
-                },
-                {
-                  "coords": "3:21 - 3:22",
-                  "parsed": ",",
-                  "id": ",",
-                  "nextstmt": []
-                },
-                {
-                  "coords": "4:2 - 4:21",
-                  "parsed": "function_argument",
-                  "id": "_length         INT",
-                  "nextstmt": [
-                    {
-                      "coords": "4:2 - 4:9",
-                      "parsed": "identifier",
-                      "id": "_length",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "4:18 - 4:21",
-                      "parsed": "int",
-                      "id": "INT",
-                      "nextstmt": [
-                        {
-                          "coords": "4:18 - 4:21",
-                          "parsed": "keyword_int",
-                          "id": "INT",
-                          "nextstmt": []
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "coords": "4:21 - 4:22",
-                  "parsed": ",",
-                  "id": ",",
-                  "nextstmt": []
-                },
-                {
-                  "coords": "5:2 - 5:22",
-                  "parsed": "function_argument",
-                  "id": "_j              JSON",
-                  "nextstmt": [
-                    {
-                      "coords": "5:2 - 5:4",
-                      "parsed": "identifier",
-                      "id": "_j",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "5:18 - 5:22",
-                      "parsed": "keyword_json",
-                      "id": "JSON",
-                      "nextstmt": []
-                    }
-                  ]
-                },
-                {
-                  "coords": "6:0 - 6:1",
-                  "parsed": ")",
-                  "id": ")",
-                  "nextstmt": []
                 }
               ]
-            },
-            {
-              "coords": "7:0 - 7:7",
-              "parsed": "keyword_returns",
-              "id": "RETURNS",
-              "nextstmt": []
-            },
-            {
-              "coords": "7:8 - 7:12",
-              "parsed": "object_reference",
-              "id": "VOID",
-              "nextstmt": [
-                {
-                  "coords": "7:8 - 7:12",
-                  "parsed": "identifier",
-                  "id": "VOID",
-                  "nextstmt": []
-                }
-              ]
-            },
-            {
-              "coords": "8:0 - 8:16",
-              "parsed": "function_language",
-              "id": "LANGUAGE plpgsql",
-              "nextstmt": [
-                {
-                  "coords": "8:0 - 8:8",
-                  "parsed": "keyword_language",
-                  "id": "LANGUAGE",
-                  "nextstmt": []
-                },
-                {
-                  "coords": "8:9 - 8:16",
-                  "parsed": "identifier",
-                  "id": "plpgsql",
-                  "nextstmt": []
-                }
-              ]
-            },
-            {
-              "coords": "9:0 - 9:2",
-              "parsed": "keyword_as",
-              "id": "AS",
-              "nextstmt": []
-            },
-            {
-              "coords": "9:3 - 9:5",
-              "parsed": "dollar_quote",
-              "id": "$$",
-              "nextstmt": []
-            },
-            {
-              "coords": "10:0 - 10:5",
-              "parsed": "keyword_begin",
-              "id": "BEGIN",
-              "nextstmt": []
-            },
-            {
-              "coords": "11:2 - 11:9",
-              "parsed": "comment",
-              "id": "-- test",
-              "nextstmt": []
-            },
-            {
-              "coords": "12:3 - 12:4",
-              "parsed": ";",
-              "id": ";",
-              "nextstmt": []
-            },
-            {
-              "coords": "13:0 - 13:2",
-              "parsed": "dollar_quote",
-              "id": "$$",
-              "nextstmt": []
-            },
-            {
-              "coords": "13:2 - 13:3",
-              "parsed": ";",
-              "id": ";",
-              "nextstmt": []
             }
           ]
         }
       ]
     }
   ]
-}…
+}

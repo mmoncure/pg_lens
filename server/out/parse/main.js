@@ -15,6 +15,10 @@ const SQL = require("@derekstride/tree-sitter-sql");
 const parser = new ParserTS();
 parser.setLanguage(SQL);
 let argv;
+const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'`; // change ASAP
+const insertText = `
+	INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
 try {
     argv = (0, yargs_1.default)(process.argv.slice(2)).options({
         i: { type: 'string', demandOption: true },
@@ -34,6 +38,9 @@ dotenv.config({ path: "/Users/maxim.jovanovic/Desktop/testlsp/.env" });
 let munchedSQL = {
     splitstmts: []
 };
+// export async function delAll(client: Client) {
+// 	let pd = await client.query(preInsertDelete)
+// }
 async function parse(client, doc, outPath, debug, outType) {
     // fs.writeFileSync('../stdout/dog.json', "SHIT")
     munchedSQL = {
@@ -43,8 +50,20 @@ async function parse(client, doc, outPath, debug, outType) {
     // parse all SQL with tree-sitter
     const tree = parser.parse(doc);
     jsonify(tree.rootNode);
-    // add DDL to db (CREATE TABLE for now)
-    insertTableColumns(client, munchedSQL, "public");
+    // console.log('parse')
+    try {
+        // add DDL to db (CREATE TABLE for now)
+        await client.query('BEGIN');
+        await client.query(preInsertDelete);
+        await insertTableColumns(client, munchedSQL, "public");
+        await client.query('COMMIT');
+        // await client.release()
+        // console.log('parse done')
+    }
+    catch (e) {
+        // console.log(e)
+        await client.query('ROLLBACK');
+    }
     // await client.end()
     // const splitSQL: types.pAndSql = await lintPSQL(doc);
     // const stmts = await createStatements(splitSQL.sql,splitSQL.psql)
@@ -85,9 +104,11 @@ function collectNodes(node, predicate /* apparently this is a thing lol */, resu
 async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') {
     if (!munchedSQL.splitstmts || !munchedSQL.splitstmts.length)
         return;
+    // let pd = await client.query(preInsertDelete)
     const stmts = munchedSQL.splitstmts[0].nextstmt;
     // console.log(stmts.length)
     // multi-statement handling
+    // if (pd) {
     for (const stmtObj of stmts) {
         if (stmtObj.parsed !== ';') { // added as its own leaf for some reason... not going to remove from 
             // tree for consistencies sake
@@ -101,19 +122,14 @@ async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') 
             const columns = collectNodes(stmtObj, (n) => n.parsed === 'column_definition');
             if (!columns.length)
                 return;
-            const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public';`; // change ASAP
-            try {
-                // let pd = await client.query(preInsertDelete)
-            }
-            catch (e) {
-                console.log("Probably an SQL error, but logged nonetheless");
-                console.error(e);
-            }
+            // try {
+            // 	let pd = await client.query(preInsertDelete)
+            // }
+            // catch (e: any) {
+            // 	console.log("Probably an SQL error, but logged nonetheless")
+            // 	console.error(e)
+            // }
             // console.log(idents[0].id)
-            const insertText = `
-
-				INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
             for (const leaf of columns) {
                 const children = leaf.nextstmt || [];
                 const ids = children.find((n) => n.parsed === 'identifier');
@@ -130,17 +146,21 @@ async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') 
                 const defIdx = children.findIndex((n) => n.parsed === 'keyword_default');
                 const colDefault = defIdx >= 0 && children[defIdx + 1] ? children[defIdx + 1].id : null;
                 try {
+                    // await client.query('BEGIN')
                     // console.log(colName)
-                    // let g = await client.query(insertText, [defaultSchema, idents[0].id, colName, colType, hasNotNull, colDefault, stmtObj.id, startpos, endpos]);
+                    let g = await client.query(insertText, [defaultSchema, idents[0].id, colName, colType, hasNotNull, colDefault, stmtObj.id, startpos, endpos]);
                     // console.log(g)
+                    // await client.query('COMMIT')
+                    // let pd = await client.query(preInsertDelete)
                 }
                 catch (e) {
                     // console.log("Probably an SQL error, but logged nonetheless")
-                    // console.error(e)
+                    throw e;
                 }
             }
         }
     }
+    // }
 }
 /**
  * Recursively checks whether any node in the AST has

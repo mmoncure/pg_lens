@@ -7,7 +7,8 @@ const SQL = require("@derekstride/tree-sitter-sql");
 const parser = new ParserTS();
 parser.setLanguage(SQL);
 // organized :)
-async function createContext(statement) {
+const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'`; // change ASAP
+async function createContext(statement, client) {
     let munchedSQL = {
         coords: "full",
         parsed: ":)",
