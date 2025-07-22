@@ -1,0 +1,983 @@
+{
+  "coords": "0:0-0:0",
+  "parsed": ":)",
+  "id": ":)",
+  "nextstmt": [
+    {
+      "coords": "0:0 - 21:0",
+      "parsed": "program",
+      "id": "CREATE TABLE public.orders (\\n    order_id      BIGSERIAL PRIMARY KEY,\\n    customer_id   BIGINT      NOT NULL,\\n    status        VARCHAR(20) NOT NULL DEFAULT 'pending',\\n    total_cents   BIGINT      NOT NULL CHECK (total_cents >= 0),\\n    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),\\n\\n    -- Basic relational bits\\n    CONSTRAINT orders_customer_fk Error\\n        FOREIGN KEY (customer_id) REFERENCES public.customers(id),\\n\\n    CONSTRAINT orders_status_chk\\n        CHECK (status IN ('pending','paid','shipped','cancelled')),\\n\\n    UNIQUE (customer_id, created_at)\\n);\\n\\nSELECT * from products where category_id;\\nSELECT * from products where category_id;\\n\\nTHIS IS AN ERROR\\n",
+      "nextstmt": [
+        {
+          "coords": "0:0 - 15:1",
+          "parsed": "statement",
+          "id": "CREATE TABLE public.orders (\\n    order_id      BIGSERIAL PRIMARY KEY,\\n    customer_id   BIGINT      NOT NULL,\\n    status        VARCHAR(20) NOT NULL DEFAULT 'pending',\\n    total_cents   BIGINT      NOT NULL CHECK (total_cents >= 0),\\n    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),\\n\\n    -- Basic relational bits\\n    CONSTRAINT orders_customer_fk Error\\n        FOREIGN KEY (customer_id) REFERENCES public.customers(id),\\n\\n    CONSTRAINT orders_status_chk\\n        CHECK (status IN ('pending','paid','shipped','cancelled')),\\n\\n    UNIQUE (customer_id, created_at)\\n)",
+          "nextstmt": [
+            {
+              "coords": "0:0 - 15:1",
+              "parsed": "create_table",
+              "id": "CREATE TABLE public.orders (\\n    order_id      BIGSERIAL PRIMARY KEY,\\n    customer_id   BIGINT      NOT NULL,\\n    status        VARCHAR(20) NOT NULL DEFAULT 'pending',\\n    total_cents   BIGINT      NOT NULL CHECK (total_cents >= 0),\\n    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),\\n\\n    -- Basic relational bits\\n    CONSTRAINT orders_customer_fk Error\\n        FOREIGN KEY (customer_id) REFERENCES public.customers(id),\\n\\n    CONSTRAINT orders_status_chk\\n        CHECK (status IN ('pending','paid','shipped','cancelled')),\\n\\n    UNIQUE (customer_id, created_at)\\n)",
+              "nextstmt": [
+                {
+                  "coords": "0:0 - 0:6",
+                  "parsed": "keyword_create",
+                  "id": "CREATE",
+                  "nextstmt": []
+                },
+                {
+                  "coords": "0:7 - 0:12",
+                  "parsed": "keyword_table",
+                  "id": "TABLE",
+                  "nextstmt": []
+                },
+                {
+                  "coords": "0:13 - 0:26",
+                  "parsed": "object_reference",
+                  "id": "public.orders",
+                  "nextstmt": [
+                    {
+                      "coords": "0:13 - 0:19",
+                      "parsed": "identifier",
+                      "id": "public",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "0:19 - 0:20",
+                      "parsed": ".",
+                      "id": ".",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "0:20 - 0:26",
+                      "parsed": "identifier",
+                      "id": "orders",
+                      "nextstmt": []
+                    }
+                  ]
+                },
+                {
+                  "coords": "0:27 - 15:1",
+                  "parsed": "column_definitions",
+                  "id": "(\\n    order_id      BIGSERIAL PRIMARY KEY,\\n    customer_id   BIGINT      NOT NULL,\\n    status        VARCHAR(20) NOT NULL DEFAULT 'pending',\\n    total_cents   BIGINT      NOT NULL CHECK (total_cents >= 0),\\n    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),\\n\\n    -- Basic relational bits\\n    CONSTRAINT orders_customer_fk Error\\n        FOREIGN KEY (customer_id) REFERENCES public.customers(id),\\n\\n    CONSTRAINT orders_status_chk\\n        CHECK (status IN ('pending','paid','shipped','cancelled')),\\n\\n    UNIQUE (customer_id, created_at)\\n)",
+                  "nextstmt": [
+                    {
+                      "coords": "0:27 - 0:28",
+                      "parsed": "(",
+                      "id": "(",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "1:4 - 1:39",
+                      "parsed": "column_definition",
+                      "id": "order_id      BIGSERIAL PRIMARY KEY",
+                      "nextstmt": [
+                        {
+                          "coords": "1:4 - 1:12",
+                          "parsed": "identifier",
+                          "id": "order_id",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "1:18 - 1:27",
+                          "parsed": "keyword_bigserial",
+                          "id": "BIGSERIAL",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "1:28 - 1:35",
+                          "parsed": "keyword_primary",
+                          "id": "PRIMARY",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "1:36 - 1:39",
+                          "parsed": "keyword_key",
+                          "id": "KEY",
+                          "nextstmt": []
+                        }
+                      ]
+                    },
+                    {
+                      "coords": "1:39 - 1:40",
+                      "parsed": ",",
+                      "id": ",",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "2:4 - 2:38",
+                      "parsed": "column_definition",
+                      "id": "customer_id   BIGINT      NOT NULL",
+                      "nextstmt": [
+                        {
+                          "coords": "2:4 - 2:15",
+                          "parsed": "identifier",
+                          "id": "customer_id",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "2:18 - 2:24",
+                          "parsed": "bigint",
+                          "id": "BIGINT",
+                          "nextstmt": [
+                            {
+                              "coords": "2:18 - 2:24",
+                              "parsed": "keyword_bigint",
+                              "id": "BIGINT",
+                              "nextstmt": []
+                            }
+                          ]
+                        },
+                        {
+                          "coords": "2:30 - 2:33",
+                          "parsed": "keyword_not",
+                          "id": "NOT",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "2:34 - 2:38",
+                          "parsed": "keyword_null",
+                          "id": "NULL",
+                          "nextstmt": []
+                        }
+                      ]
+                    },
+                    {
+                      "coords": "2:38 - 2:39",
+                      "parsed": ",",
+                      "id": ",",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "3:4 - 3:56",
+                      "parsed": "column_definition",
+                      "id": "status        VARCHAR(20) NOT NULL DEFAULT 'pending'",
+                      "nextstmt": [
+                        {
+                          "coords": "3:4 - 3:10",
+                          "parsed": "identifier",
+                          "id": "status",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "3:18 - 3:29",
+                          "parsed": "varchar",
+                          "id": "VARCHAR(20)",
+                          "nextstmt": [
+                            {
+                              "coords": "3:18 - 3:25",
+                              "parsed": "keyword_varchar",
+                              "id": "VARCHAR",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "3:25 - 3:26",
+                              "parsed": "(",
+                              "id": "(",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "3:26 - 3:28",
+                              "parsed": "literal",
+                              "id": "20",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "3:28 - 3:29",
+                              "parsed": ")",
+                              "id": ")",
+                              "nextstmt": []
+                            }
+                          ]
+                        },
+                        {
+                          "coords": "3:30 - 3:33",
+                          "parsed": "keyword_not",
+                          "id": "NOT",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "3:34 - 3:38",
+                          "parsed": "keyword_null",
+                          "id": "NULL",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "3:39 - 3:46",
+                          "parsed": "keyword_default",
+                          "id": "DEFAULT",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "3:47 - 3:56",
+                          "parsed": "literal",
+                          "id": "'pending'",
+                          "nextstmt": []
+                        }
+                      ]
+                    },
+                    {
+                      "coords": "3:56 - 3:57",
+                      "parsed": ",",
+                      "id": ",",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "4:4 - 4:63",
+                      "parsed": "column_definition",
+                      "id": "total_cents   BIGINT      NOT NULL CHECK (total_cents >= 0)",
+                      "nextstmt": [
+                        {
+                          "coords": "4:4 - 4:15",
+                          "parsed": "identifier",
+                          "id": "total_cents",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "4:18 - 4:24",
+                          "parsed": "bigint",
+                          "id": "BIGINT",
+                          "nextstmt": [
+                            {
+                              "coords": "4:18 - 4:24",
+                              "parsed": "keyword_bigint",
+                              "id": "BIGINT",
+                              "nextstmt": []
+                            }
+                          ]
+                        },
+                        {
+                          "coords": "4:30 - 4:33",
+                          "parsed": "keyword_not",
+                          "id": "NOT",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "4:34 - 4:38",
+                          "parsed": "keyword_null",
+                          "id": "NULL",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "4:39 - 4:44",
+                          "parsed": "keyword_check",
+                          "id": "CHECK",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "4:45 - 4:46",
+                          "parsed": "(",
+                          "id": "(",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "4:46 - 4:62",
+                          "parsed": "binary_expression",
+                          "id": "total_cents >= 0",
+                          "nextstmt": [
+                            {
+                              "coords": "4:46 - 4:57",
+                              "parsed": "field",
+                              "id": "total_cents",
+                              "nextstmt": [
+                                {
+                                  "coords": "4:46 - 4:57",
+                                  "parsed": "identifier",
+                                  "id": "total_cents",
+                                  "nextstmt": []
+                                }
+                              ]
+                            },
+                            {
+                              "coords": "4:58 - 4:60",
+                              "parsed": ">=",
+                              "id": ">=",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "4:61 - 4:62",
+                              "parsed": "literal",
+                              "id": "0",
+                              "nextstmt": []
+                            }
+                          ]
+                        },
+                        {
+                          "coords": "4:62 - 4:63",
+                          "parsed": ")",
+                          "id": ")",
+                          "nextstmt": []
+                        }
+                      ]
+                    },
+                    {
+                      "coords": "4:63 - 4:64",
+                      "parsed": ",",
+                      "id": ",",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "5:4 - 5:52",
+                      "parsed": "column_definition",
+                      "id": "created_at    TIMESTAMPTZ NOT NULL DEFAULT now()",
+                      "nextstmt": [
+                        {
+                          "coords": "5:4 - 5:14",
+                          "parsed": "identifier",
+                          "id": "created_at",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "5:18 - 5:29",
+                          "parsed": "keyword_timestamptz",
+                          "id": "TIMESTAMPTZ",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "5:30 - 5:33",
+                          "parsed": "keyword_not",
+                          "id": "NOT",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "5:34 - 5:38",
+                          "parsed": "keyword_null",
+                          "id": "NULL",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "5:39 - 5:46",
+                          "parsed": "keyword_default",
+                          "id": "DEFAULT",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "5:47 - 5:52",
+                          "parsed": "invocation",
+                          "id": "now()",
+                          "nextstmt": [
+                            {
+                              "coords": "5:47 - 5:50",
+                              "parsed": "object_reference",
+                              "id": "now",
+                              "nextstmt": [
+                                {
+                                  "coords": "5:47 - 5:50",
+                                  "parsed": "identifier",
+                                  "id": "now",
+                                  "nextstmt": []
+                                }
+                              ]
+                            },
+                            {
+                              "coords": "5:50 - 5:51",
+                              "parsed": "(",
+                              "id": "(",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "5:51 - 5:52",
+                              "parsed": ")",
+                              "id": ")",
+                              "nextstmt": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "coords": "5:52 - 14:36",
+                      "parsed": "constraints",
+                      "id": ",\\n\\n    -- Basic relational bits\\n    CONSTRAINT orders_customer_fk Error\\n        FOREIGN KEY (customer_id) REFERENCES public.customers(id),\\n\\n    CONSTRAINT orders_status_chk\\n        CHECK (status IN ('pending','paid','shipped','cancelled')),\\n\\n    UNIQUE (customer_id, created_at)",
+                      "nextstmt": [
+                        {
+                          "coords": "5:52 - 5:53",
+                          "parsed": ",",
+                          "id": ",",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "7:4 - 7:28",
+                          "parsed": "comment",
+                          "id": "-- Basic relational bits",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "8:4 - 8:39",
+                          "parsed": "ERROR",
+                          "id": "CONSTRAINT orders_customer_fk Error",
+                          "nextstmt": [
+                            {
+                              "coords": "8:4 - 8:14",
+                              "parsed": "keyword_constraint",
+                              "id": "CONSTRAINT",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "8:15 - 8:33",
+                              "parsed": "identifier",
+                              "id": "orders_customer_fk",
+                              "nextstmt": []
+                            }
+                          ]
+                        },
+                        {
+                          "coords": "9:8 - 9:65",
+                          "parsed": "constraint",
+                          "id": "FOREIGN KEY (customer_id) REFERENCES public.customers(id)",
+                          "nextstmt": [
+                            {
+                              "coords": "9:8 - 9:15",
+                              "parsed": "keyword_foreign",
+                              "id": "FOREIGN",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "9:16 - 9:19",
+                              "parsed": "keyword_key",
+                              "id": "KEY",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "9:20 - 9:33",
+                              "parsed": "ordered_columns",
+                              "id": "(customer_id)",
+                              "nextstmt": [
+                                {
+                                  "coords": "9:20 - 9:21",
+                                  "parsed": "(",
+                                  "id": "(",
+                                  "nextstmt": []
+                                },
+                                {
+                                  "coords": "9:21 - 9:32",
+                                  "parsed": "column",
+                                  "id": "customer_id",
+                                  "nextstmt": [
+                                    {
+                                      "coords": "9:21 - 9:32",
+                                      "parsed": "identifier",
+                                      "id": "customer_id",
+                                      "nextstmt": []
+                                    }
+                                  ]
+                                },
+                                {
+                                  "coords": "9:32 - 9:33",
+                                  "parsed": ")",
+                                  "id": ")",
+                                  "nextstmt": []
+                                }
+                              ]
+                            },
+                            {
+                              "coords": "9:34 - 9:44",
+                              "parsed": "keyword_references",
+                              "id": "REFERENCES",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "9:45 - 9:61",
+                              "parsed": "object_reference",
+                              "id": "public.customers",
+                              "nextstmt": [
+                                {
+                                  "coords": "9:45 - 9:51",
+                                  "parsed": "identifier",
+                                  "id": "public",
+                                  "nextstmt": []
+                                },
+                                {
+                                  "coords": "9:51 - 9:52",
+                                  "parsed": ".",
+                                  "id": ".",
+                                  "nextstmt": []
+                                },
+                                {
+                                  "coords": "9:52 - 9:61",
+                                  "parsed": "identifier",
+                                  "id": "customers",
+                                  "nextstmt": []
+                                }
+                              ]
+                            },
+                            {
+                              "coords": "9:61 - 9:62",
+                              "parsed": "(",
+                              "id": "(",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "9:62 - 9:64",
+                              "parsed": "identifier",
+                              "id": "id",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "9:64 - 9:65",
+                              "parsed": ")",
+                              "id": ")",
+                              "nextstmt": []
+                            }
+                          ]
+                        },
+                        {
+                          "coords": "9:65 - 9:66",
+                          "parsed": ",",
+                          "id": ",",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "11:4 - 12:66",
+                          "parsed": "constraint",
+                          "id": "CONSTRAINT orders_status_chk\\n        CHECK (status IN ('pending','paid','shipped','cancelled'))",
+                          "nextstmt": [
+                            {
+                              "coords": "11:4 - 11:14",
+                              "parsed": "keyword_constraint",
+                              "id": "CONSTRAINT",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "11:15 - 11:32",
+                              "parsed": "identifier",
+                              "id": "orders_status_chk",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "12:8 - 12:13",
+                              "parsed": "keyword_check",
+                              "id": "CHECK",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "12:14 - 12:15",
+                              "parsed": "(",
+                              "id": "(",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "12:15 - 12:65",
+                              "parsed": "binary_expression",
+                              "id": "status IN ('pending','paid','shipped','cancelled')",
+                              "nextstmt": [
+                                {
+                                  "coords": "12:15 - 12:21",
+                                  "parsed": "field",
+                                  "id": "status",
+                                  "nextstmt": [
+                                    {
+                                      "coords": "12:15 - 12:21",
+                                      "parsed": "identifier",
+                                      "id": "status",
+                                      "nextstmt": []
+                                    }
+                                  ]
+                                },
+                                {
+                                  "coords": "12:22 - 12:24",
+                                  "parsed": "keyword_in",
+                                  "id": "IN",
+                                  "nextstmt": []
+                                },
+                                {
+                                  "coords": "12:25 - 12:65",
+                                  "parsed": "list",
+                                  "id": "('pending','paid','shipped','cancelled')",
+                                  "nextstmt": [
+                                    {
+                                      "coords": "12:25 - 12:26",
+                                      "parsed": "(",
+                                      "id": "(",
+                                      "nextstmt": []
+                                    },
+                                    {
+                                      "coords": "12:26 - 12:35",
+                                      "parsed": "literal",
+                                      "id": "'pending'",
+                                      "nextstmt": []
+                                    },
+                                    {
+                                      "coords": "12:35 - 12:36",
+                                      "parsed": ",",
+                                      "id": ",",
+                                      "nextstmt": []
+                                    },
+                                    {
+                                      "coords": "12:36 - 12:42",
+                                      "parsed": "literal",
+                                      "id": "'paid'",
+                                      "nextstmt": []
+                                    },
+                                    {
+                                      "coords": "12:42 - 12:43",
+                                      "parsed": ",",
+                                      "id": ",",
+                                      "nextstmt": []
+                                    },
+                                    {
+                                      "coords": "12:43 - 12:52",
+                                      "parsed": "literal",
+                                      "id": "'shipped'",
+                                      "nextstmt": []
+                                    },
+                                    {
+                                      "coords": "12:52 - 12:53",
+                                      "parsed": ",",
+                                      "id": ",",
+                                      "nextstmt": []
+                                    },
+                                    {
+                                      "coords": "12:53 - 12:64",
+                                      "parsed": "literal",
+                                      "id": "'cancelled'",
+                                      "nextstmt": []
+                                    },
+                                    {
+                                      "coords": "12:64 - 12:65",
+                                      "parsed": ")",
+                                      "id": ")",
+                                      "nextstmt": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "coords": "12:65 - 12:66",
+                              "parsed": ")",
+                              "id": ")",
+                              "nextstmt": []
+                            }
+                          ]
+                        },
+                        {
+                          "coords": "12:66 - 12:67",
+                          "parsed": ",",
+                          "id": ",",
+                          "nextstmt": []
+                        },
+                        {
+                          "coords": "14:4 - 14:36",
+                          "parsed": "constraint",
+                          "id": "UNIQUE (customer_id, created_at)",
+                          "nextstmt": [
+                            {
+                              "coords": "14:4 - 14:10",
+                              "parsed": "keyword_unique",
+                              "id": "UNIQUE",
+                              "nextstmt": []
+                            },
+                            {
+                              "coords": "14:11 - 14:36",
+                              "parsed": "ordered_columns",
+                              "id": "(customer_id, created_at)",
+                              "nextstmt": [
+                                {
+                                  "coords": "14:11 - 14:12",
+                                  "parsed": "(",
+                                  "id": "(",
+                                  "nextstmt": []
+                                },
+                                {
+                                  "coords": "14:12 - 14:23",
+                                  "parsed": "column",
+                                  "id": "customer_id",
+                                  "nextstmt": [
+                                    {
+                                      "coords": "14:12 - 14:23",
+                                      "parsed": "identifier",
+                                      "id": "customer_id",
+                                      "nextstmt": []
+                                    }
+                                  ]
+                                },
+                                {
+                                  "coords": "14:23 - 14:24",
+                                  "parsed": ",",
+                                  "id": ",",
+                                  "nextstmt": []
+                                },
+                                {
+                                  "coords": "14:25 - 14:35",
+                                  "parsed": "column",
+                                  "id": "created_at",
+                                  "nextstmt": [
+                                    {
+                                      "coords": "14:25 - 14:35",
+                                      "parsed": "identifier",
+                                      "id": "created_at",
+                                      "nextstmt": []
+                                    }
+                                  ]
+                                },
+                                {
+                                  "coords": "14:35 - 14:36",
+                                  "parsed": ")",
+                                  "id": ")",
+                                  "nextstmt": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "coords": "15:0 - 15:1",
+                      "parsed": ")",
+                      "id": ")",
+                      "nextstmt": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "coords": "15:1 - 15:2",
+          "parsed": ";",
+          "id": ";",
+          "nextstmt": []
+        },
+        {
+          "coords": "17:0 - 17:40",
+          "parsed": "statement",
+          "id": "SELECT * from products where category_id",
+          "nextstmt": [
+            {
+              "coords": "17:0 - 17:8",
+              "parsed": "select",
+              "id": "SELECT *",
+              "nextstmt": [
+                {
+                  "coords": "17:0 - 17:6",
+                  "parsed": "keyword_select",
+                  "id": "SELECT",
+                  "nextstmt": []
+                },
+                {
+                  "coords": "17:7 - 17:8",
+                  "parsed": "select_expression",
+                  "id": "*",
+                  "nextstmt": [
+                    {
+                      "coords": "17:7 - 17:8",
+                      "parsed": "term",
+                      "id": "*",
+                      "nextstmt": [
+                        {
+                          "coords": "17:7 - 17:8",
+                          "parsed": "all_fields",
+                          "id": "*",
+                          "nextstmt": [
+                            {
+                              "coords": "17:7 - 17:8",
+                              "parsed": "*",
+                              "id": "*",
+                              "nextstmt": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "coords": "17:9 - 17:40",
+              "parsed": "from",
+              "id": "from products where category_id",
+              "nextstmt": [
+                {
+                  "coords": "17:9 - 17:13",
+                  "parsed": "keyword_from",
+                  "id": "from",
+                  "nextstmt": []
+                },
+                {
+                  "coords": "17:14 - 17:22",
+                  "parsed": "relation",
+                  "id": "products",
+                  "nextstmt": [
+                    {
+                      "coords": "17:14 - 17:22",
+                      "parsed": "object_reference",
+                      "id": "products",
+                      "nextstmt": [
+                        {
+                          "coords": "17:14 - 17:22",
+                          "parsed": "identifier",
+                          "id": "products",
+                          "nextstmt": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "coords": "17:23 - 17:40",
+                  "parsed": "where",
+                  "id": "where category_id",
+                  "nextstmt": [
+                    {
+                      "coords": "17:23 - 17:28",
+                      "parsed": "keyword_where",
+                      "id": "where",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "17:29 - 17:40",
+                      "parsed": "field",
+                      "id": "category_id",
+                      "nextstmt": [
+                        {
+                          "coords": "17:29 - 17:40",
+                          "parsed": "identifier",
+                          "id": "category_id",
+                          "nextstmt": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "coords": "17:40 - 17:41",
+          "parsed": ";",
+          "id": ";",
+          "nextstmt": []
+        },
+        {
+          "coords": "18:0 - 18:40",
+          "parsed": "statement",
+          "id": "SELECT * from products where category_id",
+          "nextstmt": [
+            {
+              "coords": "18:0 - 18:8",
+              "parsed": "select",
+              "id": "SELECT *",
+              "nextstmt": [
+                {
+                  "coords": "18:0 - 18:6",
+                  "parsed": "keyword_select",
+                  "id": "SELECT",
+                  "nextstmt": []
+                },
+                {
+                  "coords": "18:7 - 18:8",
+                  "parsed": "select_expression",
+                  "id": "*",
+                  "nextstmt": [
+                    {
+                      "coords": "18:7 - 18:8",
+                      "parsed": "term",
+                      "id": "*",
+                      "nextstmt": [
+                        {
+                          "coords": "18:7 - 18:8",
+                          "parsed": "all_fields",
+                          "id": "*",
+                          "nextstmt": [
+                            {
+                              "coords": "18:7 - 18:8",
+                              "parsed": "*",
+                              "id": "*",
+                              "nextstmt": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "coords": "18:9 - 18:40",
+              "parsed": "from",
+              "id": "from products where category_id",
+              "nextstmt": [
+                {
+                  "coords": "18:9 - 18:13",
+                  "parsed": "keyword_from",
+                  "id": "from",
+                  "nextstmt": []
+                },
+                {
+                  "coords": "18:14 - 18:22",
+                  "parsed": "relation",
+                  "id": "products",
+                  "nextstmt": [
+                    {
+                      "coords": "18:14 - 18:22",
+                      "parsed": "object_reference",
+                      "id": "products",
+                      "nextstmt": [
+                        {
+                          "coords": "18:14 - 18:22",
+                          "parsed": "identifier",
+                          "id": "products",
+                          "nextstmt": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "coords": "18:23 - 18:40",
+                  "parsed": "where",
+                  "id": "where category_id",
+                  "nextstmt": [
+                    {
+                      "coords": "18:23 - 18:28",
+                      "parsed": "keyword_where",
+                      "id": "where",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "18:29 - 18:40",
+                      "parsed": "field",
+                      "id": "category_id",
+                      "nextstmt": [
+                        {
+                          "coords": "18:29 - 18:40",
+                          "parsed": "identifier",
+                          "id": "category_id",
+                          "nextstmt": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "coords": "18:40 - 18:41",
+          "parsed": ";",
+          "id": ";",
+          "nextstmt": []
+        },
+        {
+          "coords": "20:0 - 20:16",
+          "parsed": "ERROR",
+          "id": "THIS IS AN ERROR",
+          "nextstmt": [
+            {
+              "coords": "20:5 - 20:7",
+              "parsed": "keyword_is",
+              "id": "IS",
+              "nextstmt": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

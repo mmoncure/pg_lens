@@ -2,19 +2,29 @@
 "use strict";
 // import * as parser from 'libpg-query'
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createContext = void 0;
+exports.tokenTypes = exports.createContext = void 0;
 exports.parse = parse;
 exports.jsonify = jsonify;
 exports.treeSearch = treeSearch;
+exports.treeSearchMulti = treeSearchMulti;
+exports.bfsDiagnostics = bfsDiagnostics;
+exports.bfsHighlighint = bfsHighlighint;
+const types = require("../types");
 var createContext_1 = require("./createContext"); // rexport
 Object.defineProperty(exports, "createContext", { enumerable: true, get: function () { return createContext_1.createContext; } });
 const dotenv = require("dotenv");
 const yargs_1 = require("yargs");
 const ParserTS = require("tree-sitter");
 const SQL = require("@derekstride/tree-sitter-sql");
+const vscode_languageserver_1 = require("vscode-languageserver");
 const parser = new ParserTS();
 parser.setLanguage(SQL);
 let argv;
+exports.tokenTypes = [
+    'namespace', 'type', 'class', 'enum', 'interface', 'struct', 'typeParameter',
+    'parameter', 'variable', 'keyword', 'enumMember', 'event', 'function', 'method',
+    'macro', 'label', 'comment', 'literalStr', 'identifier', 'literalNum', 'regexp', 'operator'
+];
 const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'`; // change ASAP
 const insertText = `
 	INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
@@ -79,12 +89,17 @@ async function parse(client, doc, outPath, debug, outType) {
 async function jsonify(node, parentObj = null) {
     const { startPosition, endPosition, type } = node;
     const coord = `${startPosition.row}:${startPosition.column} - ${endPosition.row}:${endPosition.column}`;
+    // console.log(type)
     const thisObj = {
         coords: coord,
         parsed: `${type}`,
         id: `${node.text.replace(/\n/g, "\\n")}`,
         nextstmt: []
     };
+    // if (type === "ERROR") {
+    // 	console.log(munchedSQL.splitstmts)
+    // 	munchedSQL.splitstmts.push(thisObj);
+    // } 
     if (parentObj) {
         parentObj.nextstmt.push(thisObj);
     }
@@ -107,11 +122,13 @@ async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') 
     // let pd = await client.query(preInsertDelete)
     const stmts = munchedSQL.splitstmts[0].nextstmt;
     // console.log(stmts.length)
+    // console.log(stmts)
     // multi-statement handling
     // if (pd) {
     for (const stmtObj of stmts) {
         if (stmtObj.parsed !== ';') { // added as its own leaf for some reason... not going to remove from 
             // tree for consistencies sake
+            // console.log('here')
             // checksums
             const objectRefs = collectNodes(stmtObj, (n) => n.parsed === 'object_reference');
             if (!objectRefs.length)
@@ -122,6 +139,7 @@ async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') 
             const columns = collectNodes(stmtObj, (n) => n.parsed === 'column_definition');
             if (!columns.length)
                 return;
+            // console.log('here1')
             // try {
             // 	let pd = await client.query(preInsertDelete)
             // }
@@ -139,8 +157,9 @@ async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') 
                 const colName = ids.id;
                 const startpos = ids.coords.split(" - ")[0];
                 const endpos = ids.coords.split(" - ")[1];
-                const datatypes = ['int', 'char', 'varchar', 'decimal', 'timestamp'];
+                const datatypes = types.DATATYPE_KEYWORDS;
                 const typeNode = children.find((n) => datatypes.includes(n.parsed.toLowerCase()));
+                // console.log(typeNode)
                 const colType = typeNode ? typeNode.id : null;
                 const hasNotNull = children.some((n) => n.parsed === 'keyword_not') && children.some((n) => n.parsed === 'keyword_null');
                 const defIdx = children.findIndex((n) => n.parsed === 'keyword_default');
@@ -214,6 +233,130 @@ function treeSearch(data, targetParsed, targetId, findId) {
         return recurse(data);
     }
     return false;
+}
+function treeSearchMulti(data, targetParsed, targetId, findId) {
+    const hits = [];
+    const tp = targetParsed.toLowerCase();
+    const tid = targetId.toLowerCase();
+    const visit = (node) => {
+        const parsedOK = node.parsed.toLowerCase() === tp;
+        if (findId) {
+            if (parsedOK)
+                hits.push(node);
+        }
+        else {
+            const idOK = !targetId || node.id.toLowerCase() === tid;
+            if (parsedOK && idOK)
+                hits.push(node);
+        }
+        if (node.nextstmt) {
+            for (const child of node.nextstmt)
+                visit(child);
+        }
+    };
+    if (Array.isArray(data)) {
+        for (const n of data)
+            visit(n);
+    }
+    else if (data) {
+        visit(data);
+    }
+    return hits;
+}
+function bfsDiagnostics(root, doc) {
+    if (!root)
+        return;
+    const diagnostics = [];
+    // console.log(JSON.stringify(root,null,2))
+    // const q: types.stmtTreeSit[] = [errorRoot];
+    // console.log((q[3].coords.split("-"))[0].split(":"))
+    // console.log((q[3].coords.split("-"))[1].split(":"))
+    // console.log(root.nextstmt.length)
+    // console.log("===")
+    // console.log(root);
+    const errors = (treeSearchMulti(root, "ERROR", '', true)); // bruh
+    // console.log(errors)
+    for (var i = 0; i < errors.length; i++) {
+        const fancystart = (errors[i].coords.split("-"))[0].split(":");
+        const fancyend = (errors[i].coords.split("-"))[1].split(":");
+        const start = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) };
+        const end = { line: parseInt(fancyend[0]), character: parseInt(fancyend[1]) };
+        const diagnostic = {
+            severity: vscode_languageserver_1.DiagnosticSeverity.Error,
+            range: {
+                start: start,
+                end: end,
+            },
+            message: `Our parsing does not permit more in depth error checking`,
+            source: '\n\nIt is recommended to check out the docs: https://www.postgresql.org/docs/current/sql.html'
+        };
+        diagnostics.push(diagnostic);
+        // const { start, end, kind } = classify(node); // map node → tokenType/modifiers
+        // if (n.nextstmt) q.push(...n.nextstmt);
+    }
+    return diagnostics;
+}
+function bfsHighlighint(root, doc) {
+    if (!root)
+        return;
+    const builder = new vscode_languageserver_1.SemanticTokensBuilder();
+    const q = [root];
+    // console.log((q[3].coords.split("-"))[0].split(":"))
+    // console.log((q[3].coords.split("-"))[1].split(":"))
+    const queue = [];
+    // q.shift()!;
+    while (q.length) {
+        const n = q.shift();
+        if (n.parsed.includes("keyword") || n.parsed.includes("identifier") || n.parsed.includes("literal")) { // quick check! IMPLEMENT THIS OUT
+            const fancystart = (n.coords.split("-"))[0].split(":");
+            const fancyend = (n.coords.split("-"))[1].split(":");
+            const start = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) };
+            const end = { line: parseInt(fancyend[0]), character: parseInt(fancyend[1]) };
+            const length = doc.offsetAt(end) - doc.offsetAt(start);
+            let type;
+            if (n.parsed.includes('keyword')) {
+                type = exports.tokenTypes.indexOf("keyword");
+            }
+            else if (n.parsed.includes('identifier')) {
+                type = exports.tokenTypes.indexOf("identifier");
+            }
+            else if (n.parsed.includes('literal')) {
+                // console.log((parseInt(n.parsed)), (parseFloat(n.parsed)), isNaN(parseInt(n.parsed)) && (n.parsed))
+                if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
+                    type = exports.tokenTypes.indexOf("literalStr");
+                }
+                else
+                    type = exports.tokenTypes.indexOf("literalNum");
+            }
+            else if (n.parsed.includes('error')) {
+                // console.log((parseInt(n.parsed)), (parseFloat(n.parsed)), isNaN(parseInt(n.parsed)) && (n.parsed))
+                if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
+                    type = exports.tokenTypes.indexOf("literalStr");
+                }
+                else
+                    type = exports.tokenTypes.indexOf("literalNum");
+            }
+            queue.push({
+                oft: doc.offsetAt(start),
+                stl: start.line,
+                stc: start.character,
+                len: length,
+                typ: type,
+                dum: 0 // bitmask of modifiers
+            });
+        }
+        // const { start, end, kind } = classify(node); // map node → tokenType/modifiers
+        if (n.nextstmt)
+            q.push(...n.nextstmt);
+    }
+    queue.sort((a, b) => a.oft - b.oft);
+    for (var i = 0; i < queue.length; i++) {
+        // console.log('==\nstartl: ', queue[i].stl)
+        // console.log('startc: ', queue[i].stc)
+        builder.push(queue[i].stl, queue[i].stc, queue[i].len, queue[i].typ, queue[i].dum);
+    }
+    // console.log(builder)
+    return builder;
 }
 // old (libpg_query tests)
 // async function lintPSQL(document: string): Promise<types.pAndSql> {

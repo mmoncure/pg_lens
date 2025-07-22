@@ -16,11 +16,20 @@ import * as path from 'path'
 
 import * as ParserTS from 'tree-sitter'
 import * as SQL from '@derekstride/tree-sitter-sql'
+import { Diagnostic, DiagnosticSeverity, Position, SemanticTokensBuilder } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { time } from 'console';
 
 const parser = new ParserTS();
 parser.setLanguage(SQL);
 
 let argv: any;
+
+export const tokenTypes = [
+  'namespace','type','class','enum','interface','struct','typeParameter',
+  'parameter','variable','keyword','enumMember','event','function','method',
+  'macro','label','comment','literalStr','identifier','literalNum','regexp','operator'
+] as const;
 
 const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'` // change ASAP
 const insertText = `
@@ -104,16 +113,21 @@ export async function parse(client: PoolClient, doc: string, outPath: string | u
 export async function jsonify(node: ParserTS.SyntaxNode, parentObj: types.stmtTreeSit | null = null) {
   const { startPosition, endPosition, type } = node;
   const coord = `${startPosition.row}:${startPosition.column} - ${endPosition.row}:${endPosition.column}`;
-  const thisObj: types.stmtTreeSit = {
+	// console.log(type)
+ 	const thisObj: types.stmtTreeSit = {
 		coords: coord,
 		parsed: `${type}`,
 		id: `${node.text.replace(/\n/g, "\\n")}`,
 		nextstmt: []
 	};
 
+	// if (type === "ERROR") {
+	// 	console.log(munchedSQL.splitstmts)
+	// 	munchedSQL.splitstmts.push(thisObj);
+	// } 
 	if (parentObj) {
 		parentObj.nextstmt.push(thisObj);
-	} 
+	}
 	else {
 		munchedSQL.splitstmts.push(thisObj);
 	}
@@ -136,7 +150,7 @@ async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSc
 	const stmts = munchedSQL.splitstmts[0].nextstmt;
 	// console.log(stmts.length)
 
-	
+	// console.log(stmts)
 
 	// multi-statement handling
 	// if (pd) {
@@ -144,7 +158,7 @@ async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSc
 
 		if (stmtObj.parsed!==';') { // added as its own leaf for some reason... not going to remove from 
 									// tree for consistencies sake
-			
+			// console.log('here')
 			// checksums
 			const objectRefs = collectNodes(stmtObj, (n: { parsed: string; }) => n.parsed === 'object_reference');
 			if (!objectRefs.length) return;
@@ -152,6 +166,7 @@ async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSc
 			if (!idents.length) return;
 			const columns = collectNodes(stmtObj, (n: { parsed: string; }) => n.parsed === 'column_definition');
 			if (!columns.length) return;
+			// console.log('here1')
 
 			// try {
 			// 	let pd = await client.query(preInsertDelete)
@@ -173,9 +188,11 @@ async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSc
 				const startpos = ids.coords.split(" - ")[0]
 				const endpos = ids.coords.split(" - ")[1]
 
-				const datatypes = ['int', 'char', 'varchar', 'decimal', 'timestamp'];
+				const datatypes = types.DATATYPE_KEYWORDS;
+
 
 				const typeNode = children.find((n: { parsed: string; }) => datatypes.includes(n.parsed.toLowerCase()));
+				// console.log(typeNode)
 				const colType = typeNode ? typeNode.id : null;
 				const hasNotNull = children.some((n: { parsed: string; }) => n.parsed === 'keyword_not') && children.some((n: { parsed: string; }) => n.parsed === 'keyword_null');
 				const defIdx = children.findIndex((n: { parsed: string; }) => n.parsed === 'keyword_default');
@@ -204,12 +221,7 @@ async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSc
  * toLowerCase() enforced
  *
  */
-export function treeSearch(
-  data: types.stmtTreeSit,
-  targetParsed: string,
-  targetId: String,
-  findId: boolean
-): boolean | string {
+export function treeSearch( data: types.stmtTreeSit, targetParsed: string, targetId: String, findId: boolean ): boolean | string {
   function recurse(node: types.stmtTreeSit): boolean | string {
     if (!findId) {
       if (
@@ -254,6 +266,135 @@ export function treeSearch(
   return false;
 }
 
+export function treeSearchMulti(
+  data: types.stmtTreeSit | types.stmtTreeSit[], targetParsed: string,targetId: string,findId: boolean): types.stmtTreeSit[] {
+	const hits: types.stmtTreeSit[] = [];
+	const tp = targetParsed.toLowerCase();
+	const tid = targetId.toLowerCase();
+
+	const visit = (node: types.stmtTreeSit) => {
+		const parsedOK = node.parsed.toLowerCase() === tp;
+
+		if (findId) {
+		
+		if (parsedOK) hits.push(node);
+		} else {
+		
+		const idOK = !targetId || node.id.toLowerCase() === tid;
+		if (parsedOK && idOK) hits.push(node);
+		}
+
+		if (node.nextstmt) {
+		for (const child of node.nextstmt) visit(child);
+		}
+	};
+
+	if (Array.isArray(data)) {
+		for (const n of data) visit(n);
+	} else if (data) {
+		visit(data);
+	}
+
+	return hits;
+	}
+
+export function bfsDiagnostics(root: types.stmtTreeSit, doc: TextDocument) {
+	if (!root) return;
+
+	const diagnostics: Diagnostic[] = [];
+	// console.log(JSON.stringify(root,null,2))
+	// const q: types.stmtTreeSit[] = [errorRoot];
+	// console.log((q[3].coords.split("-"))[0].split(":"))
+	// console.log((q[3].coords.split("-"))[1].split(":"))
+	// console.log(root.nextstmt.length)
+	// console.log("===")
+	// console.log(root);
+	const errors = (treeSearchMulti(root,"ERROR",'',true, )) // bruh
+	// console.log(errors)
+
+	for (var i = 0; i < errors.length; i++) {
+			const fancystart =  (errors[i].coords.split("-"))[0].split(":")
+			const fancyend = (errors[i].coords.split("-"))[1].split(":")
+			const start: Position = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) }
+			const end: Position = { line: parseInt(fancyend[0]), character: parseInt(fancyend[1]) }
+			const diagnostic: Diagnostic = {
+				severity: DiagnosticSeverity.Error,
+				range: {
+					start: start,
+					end: end,
+				},
+				message: `Our parsing does not permit more in depth error checking`,
+				source: '\n\nIt is recommended to check out the docs: https://www.postgresql.org/docs/current/sql.html'
+			};
+			diagnostics.push(diagnostic);
+		// const { start, end, kind } = classify(node); // map node → tokenType/modifiers
+		// if (n.nextstmt) q.push(...n.nextstmt);
+  	}
+	return diagnostics
+}
+
+export function bfsHighlighint(root: types.stmtTreeSit, doc: TextDocument): SemanticTokensBuilder | undefined {
+  	if (!root) return;
+
+	const builder = new SemanticTokensBuilder();
+
+	const q: types.stmtTreeSit[] = [root];
+	// console.log((q[3].coords.split("-"))[0].split(":"))
+	// console.log((q[3].coords.split("-"))[1].split(":"))
+
+	const queue: any = []
+
+	// q.shift()!;
+	while (q.length) {
+		const n = q.shift()!;
+		if (n.parsed.includes("keyword") || n.parsed.includes("identifier") || n.parsed.includes("literal")) { // quick check! IMPLEMENT THIS OUT
+			const fancystart =  (n.coords.split("-"))[0].split(":")
+			const fancyend = (n.coords.split("-"))[1].split(":")
+			const start: Position = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) }
+			const end: Position = { line: parseInt(fancyend[0]), character: parseInt(fancyend[1]) }
+			const length = doc.offsetAt(end) - doc.offsetAt(start)
+			let type;
+			if (n.parsed.includes('keyword')) {
+				type = tokenTypes.indexOf("keyword")
+			}
+			else if (n.parsed.includes('identifier')) {
+				type = tokenTypes.indexOf("identifier")
+			}
+			else if (n.parsed.includes('literal')) {
+				// console.log((parseInt(n.parsed)), (parseFloat(n.parsed)), isNaN(parseInt(n.parsed)) && (n.parsed))
+				if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
+					type = tokenTypes.indexOf("literalStr")
+				}
+				else type = tokenTypes.indexOf("literalNum")
+			}
+			else if (n.parsed.includes('error')) {
+				// console.log((parseInt(n.parsed)), (parseFloat(n.parsed)), isNaN(parseInt(n.parsed)) && (n.parsed))
+				if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
+					type = tokenTypes.indexOf("literalStr")
+				}
+				else type = tokenTypes.indexOf("literalNum")
+			}
+			queue.push({
+				oft: doc.offsetAt(start),
+				stl: start.line,
+				stc: start.character,
+				len: length,
+				typ: type,
+				dum: 0 // bitmask of modifiers
+			});
+		}
+		// const { start, end, kind } = classify(node); // map node → tokenType/modifiers
+		if (n.nextstmt) q.push(...n.nextstmt);
+  	}
+	queue.sort((a: any, b: any) => a.oft - b.oft);
+	for (var i = 0; i < queue.length; i++) {
+		// console.log('==\nstartl: ', queue[i].stl)
+		// console.log('startc: ', queue[i].stc)
+		builder.push(queue[i].stl,queue[i].stc,queue[i].len,queue[i].typ,queue[i].dum)
+	}
+	// console.log(builder)
+	return builder
+} 
 
 
 

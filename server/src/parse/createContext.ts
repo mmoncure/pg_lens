@@ -11,18 +11,19 @@ parser.setLanguage(SQL);
 
 // organized :)
 
-const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'` // change ASAP
+// const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'` // change ASAP
 
 export async function createContext(statement: string, client: PoolClient) {
 
 	let munchedSQL: types.stmtTreeSit = { // need new instance
-		coords: "full",
+		coords: "0:0-0:0",
 		parsed: ":)",
 		id: ":)",
 		nextstmt: [],
 	}
 	const tree = parser.parse(statement)
-	main.jsonify(tree.rootNode,munchedSQL)
+
+	await main.jsonify(tree.rootNode,munchedSQL)
 
 	return munchedSQL;
 }

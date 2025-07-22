@@ -1,607 +1,112 @@
 {
-  "splitstmts": [
+  "coords": "0:0-0:0",
+  "parsed": ":)",
+  "id": ":)",
+  "nextstmt": [
     {
-      "coords": "0:0 - 11:0",
+      "coords": "0:0 - 2:0",
       "parsed": "program",
-      "id": "CREATE TABLE products (\\n  product_id   INT             NOT NULL PRIMARY KEY,\\n  sku          CHAR(8)         NOT NULL UNIQUE,\\n  name         VARCHAR(100)    NOT NULL,\\n  description  VARCHAR(100),\\n  category_id  INT             NOT NULL,\\n  price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00,\\n  status       VARCHAR(20)     NOT NULL DEFAULT 'active',\\n  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,\\n  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP\\n);\\n",
+      "id": "SELECT * from products where category_id;\\nSELECT * from products where select select;\\n",
       "nextstmt": [
         {
-          "coords": "0:0 - 10:1",
+          "coords": "0:0 - 0:40",
           "parsed": "statement",
-          "id": "CREATE TABLE products (\\n  product_id   INT             NOT NULL PRIMARY KEY,\\n  sku          CHAR(8)         NOT NULL UNIQUE,\\n  name         VARCHAR(100)    NOT NULL,\\n  description  VARCHAR(100),\\n  category_id  INT             NOT NULL,\\n  price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00,\\n  status       VARCHAR(20)     NOT NULL DEFAULT 'active',\\n  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,\\n  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP\\n)",
+          "id": "SELECT * from products where category_id",
           "nextstmt": [
             {
-              "coords": "0:0 - 10:1",
-              "parsed": "create_table",
-              "id": "CREATE TABLE products (\\n  product_id   INT             NOT NULL PRIMARY KEY,\\n  sku          CHAR(8)         NOT NULL UNIQUE,\\n  name         VARCHAR(100)    NOT NULL,\\n  description  VARCHAR(100),\\n  category_id  INT             NOT NULL,\\n  price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00,\\n  status       VARCHAR(20)     NOT NULL DEFAULT 'active',\\n  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,\\n  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP\\n)",
+              "coords": "0:0 - 0:8",
+              "parsed": "select",
+              "id": "SELECT *",
               "nextstmt": [
                 {
                   "coords": "0:0 - 0:6",
-                  "parsed": "keyword_create",
-                  "id": "CREATE",
+                  "parsed": "keyword_select",
+                  "id": "SELECT",
                   "nextstmt": []
                 },
                 {
-                  "coords": "0:7 - 0:12",
-                  "parsed": "keyword_table",
-                  "id": "TABLE",
+                  "coords": "0:7 - 0:8",
+                  "parsed": "select_expression",
+                  "id": "*",
+                  "nextstmt": [
+                    {
+                      "coords": "0:7 - 0:8",
+                      "parsed": "term",
+                      "id": "*",
+                      "nextstmt": [
+                        {
+                          "coords": "0:7 - 0:8",
+                          "parsed": "all_fields",
+                          "id": "*",
+                          "nextstmt": [
+                            {
+                              "coords": "0:7 - 0:8",
+                              "parsed": "*",
+                              "id": "*",
+                              "nextstmt": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "coords": "0:9 - 0:40",
+              "parsed": "from",
+              "id": "from products where category_id",
+              "nextstmt": [
+                {
+                  "coords": "0:9 - 0:13",
+                  "parsed": "keyword_from",
+                  "id": "from",
                   "nextstmt": []
                 },
                 {
-                  "coords": "0:13 - 0:21",
-                  "parsed": "object_reference",
+                  "coords": "0:14 - 0:22",
+                  "parsed": "relation",
                   "id": "products",
                   "nextstmt": [
                     {
-                      "coords": "0:13 - 0:21",
-                      "parsed": "identifier",
+                      "coords": "0:14 - 0:22",
+                      "parsed": "object_reference",
                       "id": "products",
-                      "nextstmt": []
+                      "nextstmt": [
+                        {
+                          "coords": "0:14 - 0:22",
+                          "parsed": "identifier",
+                          "id": "products",
+                          "nextstmt": []
+                        }
+                      ]
                     }
                   ]
                 },
                 {
-                  "coords": "0:22 - 10:1",
-                  "parsed": "column_definitions",
-                  "id": "(\\n  product_id   INT             NOT NULL PRIMARY KEY,\\n  sku          CHAR(8)         NOT NULL UNIQUE,\\n  name         VARCHAR(100)    NOT NULL,\\n  description  VARCHAR(100),\\n  category_id  INT             NOT NULL,\\n  price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00,\\n  status       VARCHAR(20)     NOT NULL DEFAULT 'active',\\n  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,\\n  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP\\n)",
+                  "coords": "0:23 - 0:40",
+                  "parsed": "where",
+                  "id": "where category_id",
                   "nextstmt": [
                     {
-                      "coords": "0:22 - 0:23",
-                      "parsed": "(",
-                      "id": "(",
+                      "coords": "0:23 - 0:28",
+                      "parsed": "keyword_where",
+                      "id": "where",
                       "nextstmt": []
                     },
                     {
-                      "coords": "1:2 - 1:51",
-                      "parsed": "column_definition",
-                      "id": "product_id   INT             NOT NULL PRIMARY KEY",
+                      "coords": "0:29 - 0:40",
+                      "parsed": "field",
+                      "id": "category_id",
                       "nextstmt": [
                         {
-                          "coords": "1:2 - 1:12",
-                          "parsed": "identifier",
-                          "id": "product_id",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "1:15 - 1:18",
-                          "parsed": "int",
-                          "id": "INT",
-                          "nextstmt": [
-                            {
-                              "coords": "1:15 - 1:18",
-                              "parsed": "keyword_int",
-                              "id": "INT",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-                          "coords": "1:31 - 1:34",
-                          "parsed": "keyword_not",
-                          "id": "NOT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "1:35 - 1:39",
-                          "parsed": "keyword_null",
-                          "id": "NULL",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "1:40 - 1:47",
-                          "parsed": "keyword_primary",
-                          "id": "PRIMARY",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "1:48 - 1:51",
-                          "parsed": "keyword_key",
-                          "id": "KEY",
-                          "nextstmt": []
-                        }
-                      ]
-                    },
-                    {
-                      "coords": "1:51 - 1:52",
-                      "parsed": ",",
-                      "id": ",",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "2:2 - 2:46",
-                      "parsed": "column_definition",
-                      "id": "sku          CHAR(8)         NOT NULL UNIQUE",
-                      "nextstmt": [
-                        {
-                          "coords": "2:2 - 2:5",
-                          "parsed": "identifier",
-                          "id": "sku",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "2:15 - 2:22",
-                          "parsed": "char",
-                          "id": "CHAR(8)",
-                          "nextstmt": [
-                            {
-                              "coords": "2:15 - 2:19",
-                              "parsed": "keyword_char",
-                              "id": "CHAR",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "2:19 - 2:20",
-                              "parsed": "(",
-                              "id": "(",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "2:20 - 2:21",
-                              "parsed": "literal",
-                              "id": "8",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "2:21 - 2:22",
-                              "parsed": ")",
-                              "id": ")",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-                          "coords": "2:31 - 2:34",
-                          "parsed": "keyword_not",
-                          "id": "NOT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "2:35 - 2:39",
-                          "parsed": "keyword_null",
-                          "id": "NULL",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "2:40 - 2:46",
-                          "parsed": "keyword_unique",
-                          "id": "UNIQUE",
-                          "nextstmt": []
-                        }
-                      ]
-                    },
-                    {
-                      "coords": "2:46 - 2:47",
-                      "parsed": ",",
-                      "id": ",",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "3:2 - 3:39",
-                      "parsed": "column_definition",
-                      "id": "name         VARCHAR(100)    NOT NULL",
-                      "nextstmt": [
-                        {
-                          "coords": "3:2 - 3:6",
-                          "parsed": "identifier",
-                          "id": "name",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "3:15 - 3:27",
-                          "parsed": "varchar",
-                          "id": "VARCHAR(100)",
-                          "nextstmt": [
-                            {
-                              "coords": "3:15 - 3:22",
-                              "parsed": "keyword_varchar",
-                              "id": "VARCHAR",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "3:22 - 3:23",
-                              "parsed": "(",
-                              "id": "(",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "3:23 - 3:26",
-                              "parsed": "literal",
-                              "id": "100",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "3:26 - 3:27",
-                              "parsed": ")",
-                              "id": ")",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-                          "coords": "3:31 - 3:34",
-                          "parsed": "keyword_not",
-                          "id": "NOT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "3:35 - 3:39",
-                          "parsed": "keyword_null",
-                          "id": "NULL",
-                          "nextstmt": []
-                        }
-                      ]
-                    },
-                    {
-                      "coords": "3:39 - 3:40",
-                      "parsed": ",",
-                      "id": ",",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "4:2 - 4:27",
-                      "parsed": "column_definition",
-                      "id": "description  VARCHAR(100)",
-                      "nextstmt": [
-                        {
-                          "coords": "4:2 - 4:13",
-                          "parsed": "identifier",
-                          "id": "description",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "4:15 - 4:27",
-                          "parsed": "varchar",
-                          "id": "VARCHAR(100)",
-                          "nextstmt": [
-                            {
-                              "coords": "4:15 - 4:22",
-                              "parsed": "keyword_varchar",
-                              "id": "VARCHAR",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "4:22 - 4:23",
-                              "parsed": "(",
-                              "id": "(",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "4:23 - 4:26",
-                              "parsed": "literal",
-                              "id": "100",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "4:26 - 4:27",
-                              "parsed": ")",
-                              "id": ")",
-                              "nextstmt": []
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "coords": "4:27 - 4:28",
-                      "parsed": ",",
-                      "id": ",",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "5:2 - 5:39",
-                      "parsed": "column_definition",
-                      "id": "category_id  INT             NOT NULL",
-                      "nextstmt": [
-                        {
-                          "coords": "5:2 - 5:13",
+                          "coords": "0:29 - 0:40",
                           "parsed": "identifier",
                           "id": "category_id",
                           "nextstmt": []
-                        },
-                        {
-                          "coords": "5:15 - 5:18",
-                          "parsed": "int",
-                          "id": "INT",
-                          "nextstmt": [
-                            {
-                              "coords": "5:15 - 5:18",
-                              "parsed": "keyword_int",
-                              "id": "INT",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-                          "coords": "5:31 - 5:34",
-                          "parsed": "keyword_not",
-                          "id": "NOT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "5:35 - 5:39",
-                          "parsed": "keyword_null",
-                          "id": "NULL",
-                          "nextstmt": []
                         }
                       ]
-                    },
-                    {
-                      "coords": "5:39 - 5:40",
-                      "parsed": ",",
-                      "id": ",",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "6:2 - 6:52",
-                      "parsed": "column_definition",
-                      "id": "price        DECIMAL(10,2)   NOT NULL DEFAULT 0.00",
-                      "nextstmt": [
-                        {
-                          "coords": "6:2 - 6:7",
-                          "parsed": "identifier",
-                          "id": "price",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "6:15 - 6:28",
-                          "parsed": "decimal",
-                          "id": "DECIMAL(10,2)",
-                          "nextstmt": [
-                            {
-                              "coords": "6:15 - 6:22",
-                              "parsed": "keyword_decimal",
-                              "id": "DECIMAL",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "6:22 - 6:23",
-                              "parsed": "(",
-                              "id": "(",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "6:23 - 6:25",
-                              "parsed": "literal",
-                              "id": "10",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "6:25 - 6:26",
-                              "parsed": ",",
-                              "id": ",",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "6:26 - 6:27",
-                              "parsed": "literal",
-                              "id": "2",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "6:27 - 6:28",
-                              "parsed": ")",
-                              "id": ")",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-                          "coords": "6:31 - 6:34",
-                          "parsed": "keyword_not",
-                          "id": "NOT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "6:35 - 6:39",
-                          "parsed": "keyword_null",
-                          "id": "NULL",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "6:40 - 6:47",
-                          "parsed": "keyword_default",
-                          "id": "DEFAULT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "6:48 - 6:52",
-                          "parsed": "literal",
-                          "id": "0.00",
-                          "nextstmt": []
-                        }
-                      ]
-                    },
-                    {
-                      "coords": "6:52 - 6:53",
-                      "parsed": ",",
-                      "id": ",",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "7:2 - 7:56",
-                      "parsed": "column_definition",
-                      "id": "status       VARCHAR(20)     NOT NULL DEFAULT 'active'",
-                      "nextstmt": [
-                        {
-                          "coords": "7:2 - 7:8",
-                          "parsed": "identifier",
-                          "id": "status",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "7:15 - 7:26",
-                          "parsed": "varchar",
-                          "id": "VARCHAR(20)",
-                          "nextstmt": [
-                            {
-                              "coords": "7:15 - 7:22",
-                              "parsed": "keyword_varchar",
-                              "id": "VARCHAR",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "7:22 - 7:23",
-                              "parsed": "(",
-                              "id": "(",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "7:23 - 7:25",
-                              "parsed": "literal",
-                              "id": "20",
-                              "nextstmt": []
-                            },
-                            {
-                              "coords": "7:25 - 7:26",
-                              "parsed": ")",
-                              "id": ")",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-                          "coords": "7:31 - 7:34",
-                          "parsed": "keyword_not",
-                          "id": "NOT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "7:35 - 7:39",
-                          "parsed": "keyword_null",
-                          "id": "NULL",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "7:40 - 7:47",
-                          "parsed": "keyword_default",
-                          "id": "DEFAULT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "7:48 - 7:56",
-                          "parsed": "literal",
-                          "id": "'active'",
-                          "nextstmt": []
-                        }
-                      ]
-                    },
-                    {
-                      "coords": "7:56 - 7:57",
-                      "parsed": ",",
-                      "id": ",",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "8:2 - 8:65",
-                      "parsed": "column_definition",
-                      "id": "created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP",
-                      "nextstmt": [
-                        {
-                          "coords": "8:2 - 8:12",
-                          "parsed": "identifier",
-                          "id": "created_at",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "8:15 - 8:24",
-                          "parsed": "timestamp",
-                          "id": "TIMESTAMP",
-                          "nextstmt": [
-                            {
-                              "coords": "8:15 - 8:24",
-                              "parsed": "keyword_timestamp",
-                              "id": "TIMESTAMP",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-                          "coords": "8:31 - 8:34",
-                          "parsed": "keyword_not",
-                          "id": "NOT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "8:35 - 8:39",
-                          "parsed": "keyword_null",
-                          "id": "NULL",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "8:40 - 8:47",
-                          "parsed": "keyword_default",
-                          "id": "DEFAULT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "8:48 - 8:65",
-                          "parsed": "keyword_current_timestamp",
-                          "id": "CURRENT_TIMESTAMP",
-                          "nextstmt": []
-                        }
-                      ]
-                    },
-                    {
-                      "coords": "8:65 - 8:66",
-                      "parsed": ",",
-                      "id": ",",
-                      "nextstmt": []
-                    },
-                    {
-                      "coords": "9:2 - 9:65",
-                      "parsed": "column_definition",
-                      "id": "updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP",
-                      "nextstmt": [
-                        {
-                          "coords": "9:2 - 9:12",
-                          "parsed": "identifier",
-                          "id": "updated_at",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "9:15 - 9:24",
-                          "parsed": "timestamp",
-                          "id": "TIMESTAMP",
-                          "nextstmt": [
-                            {
-                              "coords": "9:15 - 9:24",
-                              "parsed": "keyword_timestamp",
-                              "id": "TIMESTAMP",
-                              "nextstmt": []
-                            }
-                          ]
-                        },
-                        {
-                          "coords": "9:31 - 9:34",
-                          "parsed": "keyword_not",
-                          "id": "NOT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "9:35 - 9:39",
-                          "parsed": "keyword_null",
-                          "id": "NULL",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "9:40 - 9:47",
-                          "parsed": "keyword_default",
-                          "id": "DEFAULT",
-                          "nextstmt": []
-                        },
-                        {
-                          "coords": "9:48 - 9:65",
-                          "parsed": "keyword_current_timestamp",
-                          "id": "CURRENT_TIMESTAMP",
-                          "nextstmt": []
-                        }
-                      ]
-                    },
-                    {
-                      "coords": "10:0 - 10:1",
-                      "parsed": ")",
-                      "id": ")",
-                      "nextstmt": []
                     }
                   ]
                 }
@@ -610,7 +115,125 @@
           ]
         },
         {
-          "coords": "10:1 - 10:2",
+          "coords": "0:40 - 0:41",
+          "parsed": ";",
+          "id": ";",
+          "nextstmt": []
+        },
+        {
+          "coords": "1:0 - 1:35",
+          "parsed": "statement",
+          "id": "SELECT * from products where select",
+          "nextstmt": [
+            {
+              "coords": "1:0 - 1:8",
+              "parsed": "select",
+              "id": "SELECT *",
+              "nextstmt": [
+                {
+                  "coords": "1:0 - 1:6",
+                  "parsed": "keyword_select",
+                  "id": "SELECT",
+                  "nextstmt": []
+                },
+                {
+                  "coords": "1:7 - 1:8",
+                  "parsed": "select_expression",
+                  "id": "*",
+                  "nextstmt": [
+                    {
+                      "coords": "1:7 - 1:8",
+                      "parsed": "term",
+                      "id": "*",
+                      "nextstmt": [
+                        {
+                          "coords": "1:7 - 1:8",
+                          "parsed": "all_fields",
+                          "id": "*",
+                          "nextstmt": [
+                            {
+                              "coords": "1:7 - 1:8",
+                              "parsed": "*",
+                              "id": "*",
+                              "nextstmt": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "coords": "1:9 - 1:35",
+              "parsed": "from",
+              "id": "from products where select",
+              "nextstmt": [
+                {
+                  "coords": "1:9 - 1:13",
+                  "parsed": "keyword_from",
+                  "id": "from",
+                  "nextstmt": []
+                },
+                {
+                  "coords": "1:14 - 1:22",
+                  "parsed": "relation",
+                  "id": "products",
+                  "nextstmt": [
+                    {
+                      "coords": "1:14 - 1:22",
+                      "parsed": "object_reference",
+                      "id": "products",
+                      "nextstmt": [
+                        {
+                          "coords": "1:14 - 1:22",
+                          "parsed": "identifier",
+                          "id": "products",
+                          "nextstmt": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "coords": "1:23 - 1:35",
+                  "parsed": "where",
+                  "id": "where select",
+                  "nextstmt": [
+                    {
+                      "coords": "1:23 - 1:28",
+                      "parsed": "keyword_where",
+                      "id": "where",
+                      "nextstmt": []
+                    },
+                    {
+                      "coords": "1:29 - 1:35",
+                      "parsed": "field",
+                      "id": "select",
+                      "nextstmt": [
+                        {
+                          "coords": "1:29 - 1:35",
+                          "parsed": "identifier",
+                          "id": "select",
+                          "nextstmt": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "coords": "1:36 - 1:42",
+          "parsed": "ERROR",
+          "id": "select",
+          "nextstmt": []
+        },
+        {
+          "coords": "1:42 - 1:43",
           "parsed": ";",
           "id": ";",
           "nextstmt": []

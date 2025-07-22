@@ -21,7 +21,8 @@ import {
 	TextDocumentPositionParams,
 	DocumentDiagnosticParams,
 	DidChangeTextDocumentNotification,
-	DidChangeTextDocumentParams
+	DidChangeTextDocumentParams,
+	SemanticTokensBuilder
 } from 'vscode-languageserver/node';
 
 import { Pool, PoolClient } from 'pg'
@@ -68,6 +69,20 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
+export const tokenTypes = [
+  'namespace','type','class','enum','interface','struct','typeParameter',
+  'parameter','variable','property','enumMember','event','function','method',
+  'macro','label','comment','string','keyword','number','regexp','operator'
+] as const;
+
+export const tokenModifiers = [
+  'declaration','definition','readonly','static','deprecated','abstract','async',
+  'modification','documentation','defaultLibrary'
+] as const;
+
+export const legend = { tokenTypes: [...tokenTypes], tokenModifiers: [...tokenModifiers] };
+
+
 connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
 
@@ -96,7 +111,12 @@ connection.onInitialize((params: InitializeParams) => {
 			diagnosticProvider: {
 				interFileDependencies: false,
 				workspaceDiagnostics: false
-			}
+			},
+			semanticTokensProvider: {
+				legend,
+				full: true,
+				range: true
+      		},
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -170,6 +190,36 @@ documents.onDidClose(e => {
 	documentSettings.delete(e.document.uri);
 });
 
+// const result: InitializeResult = {
+//   capabilities: {
+//     // ...
+//     semanticTokensProvider: {
+//       legend: { tokenTypes, tokenModifiers },
+//       full: true,
+//       range: true
+//     }
+//   }
+// };
+
+connection.languages.semanticTokens.on(async (params) => {
+	// let t = Date.now()
+	// console.log("test")
+	const doc = documents.get(params.textDocument.uri)!;
+	const text = doc.getText();
+	const ast = await pg_lens.createContext(text,clientParse); // your parser/pg_lens result
+
+	const builder = pg_lens.bfsHighlighint(ast, doc)
+	if (builder == undefined) {
+		let fail = new SemanticTokensBuilder
+		console.log("failed to build semantic highlighter")
+		return fail.build()
+	}
+	let b = builder.build()
+	// console.log(b)
+	// console.log(Date.now()-t)
+	return b
+});
+
 
 connection.languages.diagnostics.on(async (params) => {
 	const document = documents.get(params.textDocument.uri);
@@ -206,84 +256,18 @@ connection.languages.diagnostics.on(async (params) => {
 // }
 
 async function validateTextDocument(params: DocumentDiagnosticParams, textDocument: TextDocument): Promise<Diagnostic[]> {
-	// In this simple example we get the settings for every validate run.
-	const settings = await getDocumentSettings(textDocument.uri);
-	// console.log(settings)
 
-	// The validator creates diagnostics for all uppercase words length 2 and more
+	// const settings = await getDocumentSettings(textDocument.uri);
 	const text = textDocument.getText();
-
 	
-	// console.log(text)
-	// let g: any = await pg_lens.delAll(client);
-	// let g = (await pg_lens.createContext(text.substring(i+2,doc.offsetAt(params.position)), client))
-	// let f: any = await pg_lens.parse(client, text,"",true,"stdout")
-
+	const tree = await pg_lens.createContext(text,clientParse);
+	const diagnostics = pg_lens.bfsDiagnostics(tree,textDocument)
+	if (diagnostics === undefined) {
+		console.log('Something went wrong while generating diagnostics')
+		return [];
+	}
 	// console.log(JSON.stringify(f,null,2))
-
-	const pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
-
-	let problems = 0;
-	const diagnostics: Diagnostic[] = [];
-	// f.statements.map((p: any) => {
-	// 	console.log(p)
-	// 	if (p.error == true) {
-	// 		problems++;
-	// 		const diagnostic: Diagnostic = {
-	// 			severity: DiagnosticSeverity.Error,
-	// 			range: {
-	// 				start: {line: p.stmt_location || 0, character: p.stmt_start || 0},
-	// 				end: {line: p.stmt_endlocation || 0, character: p.stmt_len || 0},
-	// 			},
-	// 			message: `${p.reason}`,
-	// 			source: 'ex\n\nIt is recommended to check out the docs: https://www.postgresql.org/docs/current/sql.html'
-	// 		};
-	// 		// if (hasDiagnosticRelatedInformationCapability) {
-	// 		// 	diagnostic.relatedInformation = [
-	// 		// 		{
-	// 		// 			location: {
-	// 		// 				uri: "https://www.postgresql.org/docs/current/sql.html",
-	// 		// 				range: Object.assign({}, diagnostic.range)
-	// 		// 			},
-	// 		// 			message: 'Check out the docs'
-	// 		// 		},
-	// 		// 	];
-	// 		// }
-	// 		diagnostics.push(diagnostic);
-	// 	}
-	// })
-	// while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-	// 	problems++;
-	// 	const diagnostic: Diagnostic = {
-	// 		severity: DiagnosticSeverity.Warning,
-	// 		range: {
-	// 			start: textDocument.positionAt(m.index),
-	// 			end: textDocument.positionAt(m.index + m[0].length)
-	// 		},
-	// 		message: `${m[0]} is all uppercase.`,
-	// 		source: 'ex'
-	// 	};
-	// 	if (hasDiagnosticRelatedInformationCapability) {
-	// 		diagnostic.relatedInformation = [
-	// 			{
-	// 				location: {
-	// 					uri: textDocument.uri,
-	// 					range: Object.assign({}, diagnostic.range)
-	// 				},
-	// 				message: 'Spelling matters'
-	// 			},
-	// 			{
-	// 				location: {
-	// 					uri: textDocument.uri,
-	// 					range: Object.assign({}, diagnostic.range)
-	// 				},
-	// 				message: 'Particularly for names'
-	// 			}
-	// 		];
-	// 	}
-	// 	diagnostics.push(diagnostic);
-	// }
+	// console.log(diagnostics)
 	return diagnostics;
 }
 
@@ -390,8 +374,8 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 
 	}
 	else { // treat entire doc like the first statement
-		console.log(`${0} => ${doc.offsetAt(params.position)}`)
-		console.log(txt.substring(0,doc.offsetAt(params.position)))
+		// console.log(`${0} => ${doc.offsetAt(params.position)}`)
+		// console.log(txt.substring(0,doc.offsetAt(params.position)))
 	}
 
 	
@@ -403,15 +387,16 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 
 	const m = /(?:^|\s)(test)\.$/.exec(beforeCursor);
 	// console.log(m != null ? m['1']: 0)
-	// console.log("tb: ", table_ex)
-	// console.log("on: ", check_on)
-	// console.log("se: ", check_se)
-	// console.log("ob: ", check_ob)
-	// console.log("gb: ", check_gb)
-	// console.log("pb: ", check_pb)
-	// console.log("po: ", check_po)
-	// console.log("wh: ", check_wh)
-	// console.log("fr: ", check_fr)
+	console.log("tb: ", table_ex)
+	console.log("on: ", check_on)
+	console.log("se: ", check_se)
+	console.log("ob: ", check_ob)
+	console.log("gb: ", check_gb)
+	console.log("pb: ", check_pb)
+	console.log("po: ", check_po)
+	console.log("wh: ", check_wh)
+	console.log("fr: ", check_fr)
+	console.log("===")
 	if (check_se) {
 		await clientCompletion.query('BEGIN')
 		var cols = (await clientCompletion.query(`SELECT column_name FROM table_columns`)).rows
@@ -436,6 +421,7 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 		return retval;
 	}
 	else if (check_wh && table_ex) {
+		// console.log("yes!")
 		await clientCompletion.query('BEGIN')
 		let test = `SELECT column_name FROM table_columns WHERE table_name=$1`
 		var cols = (await clientCompletion.query(test,[table_ex])).rows
@@ -492,6 +478,7 @@ documents.onDidChangeContent(async (params) => {
 		try {
 			const doc = params.document.getText()
 			let f: any = await pg_lens.parse(clientParse, doc,"",true,"stdout")
+			// console.log(JSON.stringify(f,null,2))
 		} 
 		catch (e) {
 			console.log("Parsing failed: ");
