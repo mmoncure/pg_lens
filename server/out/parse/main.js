@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.tokenTypes = exports.createContext = void 0;
 exports.parse = parse;
 exports.jsonify = jsonify;
-exports.treeSearch = treeSearch;
-exports.treeSearchMulti = treeSearchMulti;
-exports.bfsDiagnostics = bfsDiagnostics;
+exports.bfsSearchFirstTarget = bfsSearchFirstTarget;
+exports.bfsSearchMultiTarget = bfsSearchMultiTarget;
+exports.createDiagnosticErrors = createDiagnosticErrors;
 exports.bfsHighlighint = bfsHighlighint;
 const types = require("../types");
 var createContext_1 = require("./createContext"); // rexport
@@ -24,7 +24,7 @@ exports.tokenTypes = [
     'namespace', 'type', 'class', 'enum', 'interface', 'struct', 'typeParameter',
     'parameter', 'variable', 'keyword', 'enumMember', 'event', 'function', 'method',
     'macro', 'label', 'comment', 'literalStr', 'identifier', 'literalNum', 'regexp', 'operator'
-];
+]; // Most of the color types, this is a copy of the original list from server.ts, but with changes to specific ones to make it easier to read in use, index matters, the word does not.
 const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'`; // change ASAP
 const insertText = `
 	INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
@@ -52,23 +52,19 @@ let munchedSQL = {
 // 	let pd = await client.query(preInsertDelete)
 // }
 async function parse(client, doc, outPath, debug, outType) {
-    // fs.writeFileSync('../stdout/dog.json', "SHIT")
     munchedSQL = {
         splitstmts: []
     };
-    // await client.connect()
     // parse all SQL with tree-sitter
     const tree = parser.parse(doc);
     jsonify(tree.rootNode);
-    // console.log('parse')
     try {
         // add DDL to db (CREATE TABLE for now)
         await client.query('BEGIN');
         await client.query(preInsertDelete);
         await insertTableColumns(client, munchedSQL, "public");
         await client.query('COMMIT');
-        // await client.release()
-        // console.log('parse done')
+        // await client.release() // Don't release, we want to use the same clients
     }
     catch (e) {
         // console.log(e)
@@ -86,50 +82,60 @@ async function parse(client, doc, outPath, debug, outType) {
     return munchedSQL;
 }
 // new tree-sitter (https://github.com/DerekStride/tree-sitter-sql)
+/**
+ * Creates JSON array from `ParserTS.SyntaxNode`.
+ * Recursively checks for children. Use parentObj in initial call for calls outside main.ts
+ *
+ * @param node main.ts updates (local munchedSQL gets modified)
+ * @param parentObj anything else (parentObj get modified)
+ */
 async function jsonify(node, parentObj = null) {
     const { startPosition, endPosition, type } = node;
     const coord = `${startPosition.row}:${startPosition.column} - ${endPosition.row}:${endPosition.column}`;
-    // console.log(type)
-    const thisObj = {
+    const stmtObj = {
         coords: coord,
         parsed: `${type}`,
         id: `${node.text.replace(/\n/g, "\\n")}`,
         nextstmt: []
     };
-    // if (type === "ERROR") {
-    // 	console.log(munchedSQL.splitstmts)
-    // 	munchedSQL.splitstmts.push(thisObj);
-    // } 
-    if (parentObj) {
-        parentObj.nextstmt.push(thisObj);
+    if (parentObj) { // if function called with parent, insert node into parent's nextstmt array
+        parentObj.nextstmt.push(stmtObj);
     }
-    else {
-        munchedSQL.splitstmts.push(thisObj);
+    else { // if no parent, place at root
+        munchedSQL.splitstmts.push(stmtObj);
     }
-    for (let child of node.children) {
-        jsonify(child, thisObj);
+    for (let child of node.children) { // for each child of node, call jsonify
+        jsonify(child, stmtObj);
     }
 }
+/**
+ * Recursively searches through tree adding predicate-matched nodes to results
+ *
+ * @param node
+ * @param predicate
+ * @param results
+ *
+ */
 function collectNodes(node, predicate /* apparently this is a thing lol */, results = []) {
     if (predicate(node))
-        results.push(node);
-    (node.nextstmt || []).forEach(child => collectNodes(child, predicate, results));
-    return results;
+        results.push(node); // if node matches given predicate, add it to results
+    (node.nextstmt || []).forEach(child => collectNodes(child, predicate, results)); // recursively modify results for each child given a node
+    return results; // return up results
 }
+/**
+ * Inserts columns from given munchedSQL. Expects schema = 'public'
+ *
+ * @param client
+ * @param munchedSQL
+ * @param defaultSchema
+ */
 async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') {
     if (!munchedSQL.splitstmts || !munchedSQL.splitstmts.length)
         return;
-    // let pd = await client.query(preInsertDelete)
     const stmts = munchedSQL.splitstmts[0].nextstmt;
-    // console.log(stmts.length)
-    // console.log(stmts)
     // multi-statement handling
-    // if (pd) {
     for (const stmtObj of stmts) {
-        if (stmtObj.parsed !== ';') { // added as its own leaf for some reason... not going to remove from 
-            // tree for consistencies sake
-            // console.log('here')
-            // checksums
+        if (stmtObj.parsed !== ';') { // added as its own leaf for some reason... not going to remove from tree for consistencies sake
             const objectRefs = collectNodes(stmtObj, (n) => n.parsed === 'object_reference');
             if (!objectRefs.length)
                 return;
@@ -139,38 +145,23 @@ async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') 
             const columns = collectNodes(stmtObj, (n) => n.parsed === 'column_definition');
             if (!columns.length)
                 return;
-            // console.log('here1')
-            // try {
-            // 	let pd = await client.query(preInsertDelete)
-            // }
-            // catch (e: any) {
-            // 	console.log("Probably an SQL error, but logged nonetheless")
-            // 	console.error(e)
-            // }
-            // console.log(idents[0].id)
-            for (const leaf of columns) {
+            for (const leaf of columns) { // iterates through columns
                 const children = leaf.nextstmt || [];
-                const ids = children.find((n) => n.parsed === 'identifier');
+                const ids = children.find((n) => n.parsed === 'identifier'); // searches children for parsed == 'identifier' returns as ids.
                 if (!ids) {
                     console.warn('No children: ', leaf);
                 }
                 const colName = ids.id;
                 const startpos = ids.coords.split(" - ")[0];
                 const endpos = ids.coords.split(" - ")[1];
-                const datatypes = types.DATATYPE_KEYWORDS;
-                const typeNode = children.find((n) => datatypes.includes(n.parsed.toLowerCase()));
-                // console.log(typeNode)
-                const colType = typeNode ? typeNode.id : null;
+                const datatypes = types.DATATYPE_KEYWORDS; // this is bad, needs work
+                const typeNode = children.find((n) => datatypes.includes(n.parsed.toLowerCase())); // searches for datatype in parsed from children []
+                const colType = typeNode ? typeNode.id : null; // could throw error here, for now push forward
                 const hasNotNull = children.some((n) => n.parsed === 'keyword_not') && children.some((n) => n.parsed === 'keyword_null');
-                const defIdx = children.findIndex((n) => n.parsed === 'keyword_default');
-                const colDefault = defIdx >= 0 && children[defIdx + 1] ? children[defIdx + 1].id : null;
+                const hasDefault = children.findIndex((n) => n.parsed === 'keyword_default');
+                const colDefault = hasDefault >= 0 && children[hasDefault + 1] ? children[hasDefault + 1].id : null; // returns next child in children if column has keyword_default, aka, the default value
                 try {
-                    // await client.query('BEGIN')
-                    // console.log(colName)
                     let g = await client.query(insertText, [defaultSchema, idents[0].id, colName, colType, hasNotNull, colDefault, stmtObj.id, startpos, endpos]);
-                    // console.log(g)
-                    // await client.query('COMMIT')
-                    // let pd = await client.query(preInsertDelete)
                 }
                 catch (e) {
                     // console.log("Probably an SQL error, but logged nonetheless")
@@ -182,100 +173,100 @@ async function insertTableColumns(client, munchedSQL, defaultSchema = 'public') 
     // }
 }
 /**
- * Recursively checks whether any node in the AST has
+ * Basic BFS with logic to return true on:
  * `parsed === targetParsed` and `id === targetId`
+ *
+ * Also can return node.id when `findId === true` and `targetParsed === parsed`
  *
  * toLowerCase() enforced
  *
+ * @param data
+ * @param targetParsed
+ * @param targetId
+ * @param findId
+ *
  */
-function treeSearch(data, targetParsed, targetId, findId) {
-    function recurse(node) {
-        if (!findId) {
-            if (node.parsed.toLowerCase() === targetParsed.toLowerCase() &&
-                node.id.toLowerCase() === targetId.toLowerCase()) {
-                return true;
+function bfsSearchFirstTarget(data, targetParsed, targetId, findId = false) {
+    let _path = "";
+    if (!data)
+        return { data: false, path: _path };
+    const queue = [data];
+    while (queue.length) {
+        const node = queue.shift();
+        if (findId === false) {
+            if ((node?.id.toLowerCase() === targetId.toLowerCase()) && node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
+                return { data: true, path: _path };
             }
-            if (Array.isArray(node.nextstmt)) {
-                for (const child of node.nextstmt) {
-                    if (recurse(child) === true)
-                        return true;
-                }
-            }
-            return false;
         }
         else {
-            // only match on `parsed`, return the node.id when found
-            if (node.parsed.toLowerCase() === targetParsed.toLowerCase()) {
-                return node.id;
+            if (node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
+                return { data: node?.id, path: _path };
             }
-            if (Array.isArray(node.nextstmt)) {
-                for (const child of node.nextstmt) {
-                    const res = recurse(child);
-                    if (res !== false)
-                        return res;
-                }
-            }
-            return false;
         }
-    }
-    if (Array.isArray(data)) {
-        if (!findId) {
-            return data.some(node => recurse(node) === true);
-        }
-        for (const node of data) {
-            const res = recurse(node);
-            if (res !== false)
-                return res;
-        }
-        return false;
-    }
-    else if (data && typeof data === 'object') {
-        return recurse(data);
-    }
-    return false;
-}
-function treeSearchMulti(data, targetParsed, targetId, findId) {
-    const hits = [];
-    const tp = targetParsed.toLowerCase();
-    const tid = targetId.toLowerCase();
-    const visit = (node) => {
-        const parsedOK = node.parsed.toLowerCase() === tp;
-        if (findId) {
-            if (parsedOK)
-                hits.push(node);
-        }
-        else {
-            const idOK = !targetId || node.id.toLowerCase() === tid;
-            if (parsedOK && idOK)
-                hits.push(node);
-        }
-        if (node.nextstmt) {
+        if (node?.nextstmt && node.nextstmt.length > 0) {
             for (const child of node.nextstmt)
-                visit(child);
+                queue.push(child);
         }
-    };
-    if (Array.isArray(data)) {
-        for (const n of data)
-            visit(n);
     }
-    else if (data) {
-        visit(data);
-    }
-    return hits;
+    return { data: false, path: _path };
 }
-function bfsDiagnostics(root, doc) {
+/**
+ * Basic BFS with logic to return hits on:
+ * `parsed === targetParsed` and/or `id === targetId`
+ *
+ * toLowerCase() enforced
+ * @param data
+ * @param targetParsed
+ * @param targetId
+ * @param match
+ * @returns
+ */
+function bfsSearchMultiTarget(data, targetParsed = '', targetId = '', match) {
+    let _path = '';
+    const hits = [];
+    if (!data)
+        return { data: hits, path: _path };
+    const queue = [data];
+    while (queue.length) {
+        const node = queue.shift();
+        if (match === 'both') {
+            if ((node?.id.toLowerCase() === targetId.toLowerCase()) && node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
+                hits.push(node);
+            }
+        }
+        else if (match === 'parsed') {
+            if (node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
+                hits.push(node);
+            }
+        }
+        else {
+            if (node?.id.toLowerCase() === targetId.toLowerCase()) {
+                hits.push(node);
+            }
+        }
+        if (node?.nextstmt && node.nextstmt.length > 0) {
+            for (const child of node.nextstmt)
+                queue.push(child);
+        }
+    }
+    return {
+        path: _path,
+        data: hits
+    };
+}
+/**
+ * Creates diagnostics by calling `bfsSearchMultiTarget(root, "ERROR", "", 'parsed')`
+ * which searches for nodes with a parsed value of `error`
+ *
+ * @param root
+ * @param doc
+ * @returns
+ */
+function createDiagnosticErrors(root, doc) {
     if (!root)
         return;
     const diagnostics = [];
-    // console.log(JSON.stringify(root,null,2))
-    // const q: types.stmtTreeSit[] = [errorRoot];
-    // console.log((q[3].coords.split("-"))[0].split(":"))
-    // console.log((q[3].coords.split("-"))[1].split(":"))
-    // console.log(root.nextstmt.length)
-    // console.log("===")
-    // console.log(root);
-    const errors = (treeSearchMulti(root, "ERROR", '', true)); // bruh
-    // console.log(errors)
+    const errors = (bfsSearchMultiTarget(root, "ERROR", "", 'parsed')).data; // bruh
     for (var i = 0; i < errors.length; i++) {
         const fancystart = (errors[i].coords.split("-"))[0].split(":");
         const fancyend = (errors[i].coords.split("-"))[1].split(":");
@@ -287,27 +278,29 @@ function bfsDiagnostics(root, doc) {
                 start: start,
                 end: end,
             },
-            message: `Our parsing does not permit more in depth error checking`,
+            message: `Our parsing does not permit more in depth error checking`, // maybe find more in depth error reporting?
             source: '\n\nIt is recommended to check out the docs: https://www.postgresql.org/docs/current/sql.html'
         };
         diagnostics.push(diagnostic);
-        // const { start, end, kind } = classify(node); // map node → tokenType/modifiers
-        // if (n.nextstmt) q.push(...n.nextstmt);
     }
     return diagnostics;
 }
+/**
+ * Basic BFS with logic to create and sort highlights by start position
+ *
+ * @param root
+ * @param doc
+ * @returns
+ */
 function bfsHighlighint(root, doc) {
     if (!root)
         return;
     const builder = new vscode_languageserver_1.SemanticTokensBuilder();
     const q = [root];
-    // console.log((q[3].coords.split("-"))[0].split(":"))
-    // console.log((q[3].coords.split("-"))[1].split(":"))
-    const queue = [];
-    // q.shift()!;
+    const queue = []; // lol
     while (q.length) {
         const n = q.shift();
-        if (n.parsed.includes("keyword") || n.parsed.includes("identifier") || n.parsed.includes("literal")) { // quick check! IMPLEMENT THIS OUT
+        if (n.parsed.includes("keyword") || n.parsed.includes("identifier") || n.parsed.includes("literal")) { // ensures we only look at nodes we want to color
             const fancystart = (n.coords.split("-"))[0].split(":");
             const fancyend = (n.coords.split("-"))[1].split(":");
             const start = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) };
@@ -321,38 +314,27 @@ function bfsHighlighint(root, doc) {
                 type = exports.tokenTypes.indexOf("identifier");
             }
             else if (n.parsed.includes('literal')) {
-                // console.log((parseInt(n.parsed)), (parseFloat(n.parsed)), isNaN(parseInt(n.parsed)) && (n.parsed))
                 if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
                     type = exports.tokenTypes.indexOf("literalStr");
                 }
                 else
                     type = exports.tokenTypes.indexOf("literalNum");
             }
-            else if (n.parsed.includes('error')) {
-                // console.log((parseInt(n.parsed)), (parseFloat(n.parsed)), isNaN(parseInt(n.parsed)) && (n.parsed))
-                if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
-                    type = exports.tokenTypes.indexOf("literalStr");
-                }
-                else
-                    type = exports.tokenTypes.indexOf("literalNum");
-            }
+            // add all nodes to queue (out of order)
             queue.push({
                 oft: doc.offsetAt(start),
                 stl: start.line,
                 stc: start.character,
                 len: length,
                 typ: type,
-                dum: 0 // bitmask of modifiers
+                dum: 0
             });
         }
-        // const { start, end, kind } = classify(node); // map node → tokenType/modifiers
         if (n.nextstmt)
             q.push(...n.nextstmt);
     }
-    queue.sort((a, b) => a.oft - b.oft);
-    for (var i = 0; i < queue.length; i++) {
-        // console.log('==\nstartl: ', queue[i].stl)
-        // console.log('startc: ', queue[i].stc)
+    queue.sort((a, b) => a.oft - b.oft); // now we sort queue because semantic highlights require inputs to be in order
+    for (var i = 0; i < queue.length; i++) { // push ordered queue into semantic highlight builder
         builder.push(queue[i].stl, queue[i].stc, queue[i].len, queue[i].typ, queue[i].dum);
     }
     // console.log(builder)

@@ -257,17 +257,15 @@ connection.languages.diagnostics.on(async (params) => {
 
 async function validateTextDocument(params: DocumentDiagnosticParams, textDocument: TextDocument): Promise<Diagnostic[]> {
 
-	// const settings = await getDocumentSettings(textDocument.uri);
 	const text = textDocument.getText();
 	
 	const tree = await pg_lens.createContext(text,clientParse);
-	const diagnostics = pg_lens.bfsDiagnostics(tree,textDocument)
+	const diagnostics = pg_lens.createDiagnosticErrors(tree,textDocument)
 	if (diagnostics === undefined) {
 		console.log('Something went wrong while generating diagnostics')
 		return [];
 	}
-	// console.log(JSON.stringify(f,null,2))
-	// console.log(diagnostics)
+
 	return diagnostics;
 }
 
@@ -275,6 +273,8 @@ connection.onDidChangeWatchedFiles(_change => {
 	// Monitored files have change in VSCode
 	connection.console.log('We received a file change event');
 });
+
+
 
 
 connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem[]> => {
@@ -352,25 +352,25 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 		
 		// search for table
 
-		table_ex = (pg_lens.treeSearch(tree,"relation","",true)) // maybe, might need changing (object_reference also contains important data)
+		table_ex = (pg_lens.bfsSearchFirstTarget(tree,"relation","",true)).data // maybe, might need changing (object_reference also contains important data)
 		
 		// complex 
 		
-		check_on = (pg_lens.treeSearch(tree,"term","ON",false)) // checks for unfinished ON
-		check_se = (pg_lens.treeSearch(tree,"select_expression","",false)) // checks for unfinished SELECT
-		check_ob = (pg_lens.treeSearch(tree,"order_target","",false)) // checks for unfinished ORDER BY
-		check_gb = (pg_lens.treeSearch(tree,"group_by","GROUP BY",false)) // checks for unfinished GROUP BY
-		check_pb = (pg_lens.treeSearch(tree,"partition_by","PARTITION BY",false)) // checks for unfinished PARTITION BY
+		check_on = (pg_lens.bfsSearchFirstTarget(tree,"term","ON",false)).data // checks for unfinished ON
+		check_se = (pg_lens.bfsSearchFirstTarget(tree,"select_expression","",false)).data // checks for unfinished SELECT
+		check_ob = (pg_lens.bfsSearchFirstTarget(tree,"order_target","",false)).data // checks for unfinished ORDER BY
+		check_gb = (pg_lens.bfsSearchFirstTarget(tree,"group_by","GROUP BY",false)).data // checks for unfinished GROUP BY
+		check_pb = (pg_lens.bfsSearchFirstTarget(tree,"partition_by","PARTITION BY",false)).data // checks for unfinished PARTITION BY
 
-		check_po = (pg_lens.treeSearch(tree,"(","(",false) && !pg_lens.treeSearch(tree,")",")",false))
+		check_po = (pg_lens.bfsSearchFirstTarget(tree,"(","(",false).data && !pg_lens.bfsSearchFirstTarget(tree,")",")",false).data)
 
 		// easier lol (cause errors more directly)
 
-		check_wh = (pg_lens.treeSearch(tree,"error","WHERE",false)) // checks for unfinished WHERE
+		check_wh = (pg_lens.bfsSearchFirstTarget(tree,"error","WHERE",false)).data // checks for unfinished WHERE
 
 		// table lookup
 
-		check_fr = (pg_lens.treeSearch(tree,"error","FROM",false)) // checks for unfinished FROM
+		check_fr = (pg_lens.bfsSearchFirstTarget(tree,"error","FROM",false)).data // checks for unfinished FROM
 
 	}
 	else { // treat entire doc like the first statement

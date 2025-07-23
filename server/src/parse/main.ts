@@ -3,7 +3,7 @@
 
 
 import * as types from '../types'
-export {createContext} from './createContext' // rexport
+export { createContext } from './createContext' // rexport
 
 
 import { create } from 'domain';
@@ -26,10 +26,10 @@ parser.setLanguage(SQL);
 let argv: any;
 
 export const tokenTypes = [
-  'namespace','type','class','enum','interface','struct','typeParameter',
-  'parameter','variable','keyword','enumMember','event','function','method',
-  'macro','label','comment','literalStr','identifier','literalNum','regexp','operator'
-] as const;
+	'namespace', 'type', 'class', 'enum', 'interface', 'struct', 'typeParameter',
+	'parameter', 'variable', 'keyword', 'enumMember', 'event', 'function', 'method',
+	'macro', 'label', 'comment', 'literalStr', 'identifier', 'literalNum', 'regexp', 'operator'
+] as const; // Most of the color types, this is a copy of the original list from server.ts, but with changes to specific ones to make it easier to read in use, index matters, the word does not.
 
 const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'` // change ASAP
 const insertText = `
@@ -39,11 +39,11 @@ const insertText = `
 
 try {
 	argv = yargs(process.argv.slice(2)).options({
-  i: { type: 'string', demandOption: true },
-  o: { type: 'string' },
-  rw: { type: 'string', choices: ['db', 'stdout'], demandOption: true },
-  d: { type: 'boolean', default: false}
-}).parseSync()
+		i: { type: 'string', demandOption: true },
+		o: { type: 'string' },
+		rw: { type: 'string', choices: ['db', 'stdout'], demandOption: true },
+		d: { type: 'boolean', default: false }
+	}).parseSync()
 }
 catch (e) {
 	argv = {
@@ -52,7 +52,7 @@ catch (e) {
 }
 
 
-dotenv.config({ path: "/Users/maxim.jovanovic/Desktop/testlsp/.env"});
+dotenv.config({ path: "/Users/maxim.jovanovic/Desktop/testlsp/.env" });
 
 // pg setup
 
@@ -67,29 +67,25 @@ let munchedSQL: any = {
 // }
 
 export async function parse(client: PoolClient, doc: string, outPath: string | undefined, debug: boolean, outType: string) {
-	// fs.writeFileSync('../stdout/dog.json', "SHIT")
+
 	munchedSQL = {
 		splitstmts: []
 	}
-	// await client.connect()
 
 	// parse all SQL with tree-sitter
 
 	const tree = parser.parse(doc);
 	jsonify(tree.rootNode);
-	
-	// console.log('parse')
+
 	try {
 		// add DDL to db (CREATE TABLE for now)
 		await client.query('BEGIN')
 		await client.query(preInsertDelete)
-		await insertTableColumns(client,munchedSQL,"public")
+		await insertTableColumns(client, munchedSQL, "public")
 		await client.query('COMMIT')
-		// await client.release()
-
-		// console.log('parse done')
+		// await client.release() // Don't release, we want to use the same clients
 	}
-	catch (e){
+	catch (e) {
 		// console.log(e)
 		await client.query('ROLLBACK')
 	}
@@ -98,7 +94,7 @@ export async function parse(client: PoolClient, doc: string, outPath: string | u
 
 	// const splitSQL: types.pAndSql = await lintPSQL(doc);
 	// const stmts = await createStatements(splitSQL.sql,splitSQL.psql)
- 
+
 	// // if (outType === "stdout") {
 	// 	// console.log(stmts)
 	// 	// fs.writeFileSync(path.join('../stdout', outPath || "./dog.json"), JSON.stringify(stmts,null,2))
@@ -110,100 +106,102 @@ export async function parse(client: PoolClient, doc: string, outPath: string | u
 
 // new tree-sitter (https://github.com/DerekStride/tree-sitter-sql)
 
+
+/**
+ * Creates JSON array from `ParserTS.SyntaxNode`.
+ * Recursively checks for children. Use parentObj in initial call for calls outside main.ts
+ * 
+ * @param node main.ts updates (local munchedSQL gets modified)
+ * @param parentObj anything else (parentObj get modified)
+ */
 export async function jsonify(node: ParserTS.SyntaxNode, parentObj: types.stmtTreeSit | null = null) {
-  const { startPosition, endPosition, type } = node;
-  const coord = `${startPosition.row}:${startPosition.column} - ${endPosition.row}:${endPosition.column}`;
-	// console.log(type)
- 	const thisObj: types.stmtTreeSit = {
+	const { startPosition, endPosition, type } = node;
+	const coord = `${startPosition.row}:${startPosition.column} - ${endPosition.row}:${endPosition.column}`;
+	const stmtObj: types.stmtTreeSit = {
 		coords: coord,
 		parsed: `${type}`,
 		id: `${node.text.replace(/\n/g, "\\n")}`,
 		nextstmt: []
 	};
-
-	// if (type === "ERROR") {
-	// 	console.log(munchedSQL.splitstmts)
-	// 	munchedSQL.splitstmts.push(thisObj);
-	// } 
-	if (parentObj) {
-		parentObj.nextstmt.push(thisObj);
+	if (parentObj) { // if function called with parent, insert node into parent's nextstmt array
+		parentObj.nextstmt.push(stmtObj);
 	}
-	else {
-		munchedSQL.splitstmts.push(thisObj);
+	else { // if no parent, place at root
+		munchedSQL.splitstmts.push(stmtObj);
 	}
-	for (let child of node.children) {
-		jsonify(child, thisObj);
+	for (let child of node.children) { // for each child of node, call jsonify
+		jsonify(child, stmtObj);
 	}
 }
 
+
+/**
+ * Recursively searches through tree adding predicate-matched nodes to results
+ * 
+ * @param node 
+ * @param predicate 
+ * @param results 
+ * 
+ */
 function collectNodes(node: types.stmtTreeSit, predicate: Function /* apparently this is a thing lol */, results: any = []) {
-	if (predicate(node)) results.push(node);
-	(node.nextstmt || []).forEach(child => collectNodes(child, predicate, results));
-	return results;
+	if (predicate(node)) results.push(node); // if node matches given predicate, add it to results
+
+	(node.nextstmt || []).forEach(child => collectNodes(child, predicate, results)); // recursively modify results for each child given a node
+
+	return results; // return up results
 }
 
+
+/**
+ * Inserts columns from given munchedSQL. Expects schema = 'public'
+ * 
+ * @param client 
+ * @param munchedSQL 
+ * @param defaultSchema 
+ */
 async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSchema = 'public') {
 	if (!munchedSQL.splitstmts || !munchedSQL.splitstmts.length) return;
 
-	// let pd = await client.query(preInsertDelete)
-
 	const stmts = munchedSQL.splitstmts[0].nextstmt;
-	// console.log(stmts.length)
-
-	// console.log(stmts)
 
 	// multi-statement handling
-	// if (pd) {
-	for(const stmtObj of stmts) {
+	for (const stmtObj of stmts) {
 
-		if (stmtObj.parsed!==';') { // added as its own leaf for some reason... not going to remove from 
-									// tree for consistencies sake
-			// console.log('here')
-			// checksums
+		if (stmtObj.parsed !== ';') { // added as its own leaf for some reason... not going to remove from tree for consistencies sake
+
 			const objectRefs = collectNodes(stmtObj, (n: { parsed: string; }) => n.parsed === 'object_reference');
 			if (!objectRefs.length) return;
 			const idents = collectNodes(objectRefs[0], (n: { parsed: string; }) => n.parsed === 'identifier');
 			if (!idents.length) return;
 			const columns = collectNodes(stmtObj, (n: { parsed: string; }) => n.parsed === 'column_definition');
 			if (!columns.length) return;
-			// console.log('here1')
 
-			// try {
-			// 	let pd = await client.query(preInsertDelete)
-			// }
-			// catch (e: any) {
-			// 	console.log("Probably an SQL error, but logged nonetheless")
-			// 	console.error(e)
-			// }
-			// console.log(idents[0].id)
+			for (const leaf of columns) { // iterates through columns
 
-
-			for (const leaf of columns) {
 				const children = leaf.nextstmt || [];
-				const ids = children.find((n: { parsed: string; }) => n.parsed === 'identifier');
+
+				const ids = children.find((n: { parsed: string; }) => n.parsed === 'identifier'); // searches children for parsed == 'identifier' returns as ids.
 				if (!ids) {
 					console.warn('No children: ', leaf);
 				}
+
 				const colName = ids.id
 				const startpos = ids.coords.split(" - ")[0]
 				const endpos = ids.coords.split(" - ")[1]
 
-				const datatypes = types.DATATYPE_KEYWORDS;
+				const datatypes = types.DATATYPE_KEYWORDS; // this is bad, needs work
 
+				const typeNode = children.find((n: { parsed: string; }) => datatypes.includes(n.parsed.toLowerCase())); // searches for datatype in parsed from children []
 
-				const typeNode = children.find((n: { parsed: string; }) => datatypes.includes(n.parsed.toLowerCase()));
-				// console.log(typeNode)
-				const colType = typeNode ? typeNode.id : null;
+				const colType = typeNode ? typeNode.id : null; // could throw error here, for now push forward
+
 				const hasNotNull = children.some((n: { parsed: string; }) => n.parsed === 'keyword_not') && children.some((n: { parsed: string; }) => n.parsed === 'keyword_null');
-				const defIdx = children.findIndex((n: { parsed: string; }) => n.parsed === 'keyword_default');
-				const colDefault = defIdx >= 0 && children[defIdx + 1] ? children[defIdx + 1].id : null;
+				const hasDefault = children.findIndex((n: { parsed: string; }) => n.parsed === 'keyword_default');
+
+				const colDefault = hasDefault >= 0 && children[hasDefault + 1] ? children[hasDefault + 1].id : null; // returns next child in children if column has keyword_default, aka, the default value
+
 				try {
-					// await client.query('BEGIN')
-					// console.log(colName)
 					let g = await client.query(insertText, [defaultSchema, idents[0].id, colName, colType, hasNotNull, colDefault, stmtObj.id, startpos, endpos]);
-					// console.log(g)
-					// await client.query('COMMIT')
-					// let pd = await client.query(preInsertDelete)
 				}
 				catch (e: any) {
 					// console.log("Probably an SQL error, but logged nonetheless")
@@ -212,148 +210,149 @@ async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSc
 			}
 		}
 	}
-// }
+	// }
 }
+
 /**
- * Recursively checks whether any node in the AST has
+ * Basic BFS with logic to return true on:
  * `parsed === targetParsed` and `id === targetId`
+ * 
+ * Also can return node.id when `findId === true` and `targetParsed === parsed`
  * 
  * toLowerCase() enforced
  *
+ * @param data 
+ * @param targetParsed 
+ * @param targetId 
+ * @param findId 
+ * 
  */
-export function treeSearch( data: types.stmtTreeSit, targetParsed: string, targetId: String, findId: boolean ): boolean | string {
-  function recurse(node: types.stmtTreeSit): boolean | string {
-    if (!findId) {
-      if (
-        node.parsed.toLowerCase() === targetParsed.toLowerCase() &&
-        node.id.toLowerCase() === targetId.toLowerCase()
-      ) {
-        return true;
-      }
-      if (Array.isArray(node.nextstmt)) {
-        for (const child of node.nextstmt) {
-          if (recurse(child) === true) return true;
-        }
-      }
-      return false;
-    } else {
-      // only match on `parsed`, return the node.id when found
-      if (node.parsed.toLowerCase() === targetParsed.toLowerCase()) {
-        return node.id;
-      }
-      if (Array.isArray(node.nextstmt)) {
-        for (const child of node.nextstmt) {
-          const res = recurse(child);
-          if (res !== false) return res;
-        }
-      }
-      return false;
-    }
-  }
+export function bfsSearchFirstTarget(data: types.stmtTreeSit, targetParsed: string, targetId: String, findId: boolean = false): types.searchReturn {
+	let _path = ""
+	if (!data) return {data: false, path: _path}
 
-  if (Array.isArray(data)) {
-    if (!findId) {
-      return data.some(node => recurse(node) === true);
-    }
-    for (const node of data) {
-      const res = recurse(node);
-      if (res !== false) return res;
-    }
-    return false;
-  } else if (data && typeof data === 'object') {
-    return recurse(data);
-  }
-  return false;
+	const queue = [data];
+	while (queue.length) {
+		const node = queue.shift();
+		if (findId === false) {
+			if ((node?.id.toLowerCase() === targetId.toLowerCase()) && node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
+				return {data: true, path: _path}
+			}
+		}
+		else {
+			if (node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
+				return {data: node?.id, path: _path }
+			}
+		}
+
+		if (node?.nextstmt && node.nextstmt.length > 0) {
+			for (const child of node.nextstmt) queue.push(child);
+		}
+	}
+	return {data: false, path: _path};
 }
 
-export function treeSearchMulti(
-  data: types.stmtTreeSit | types.stmtTreeSit[], targetParsed: string,targetId: string,findId: boolean): types.stmtTreeSit[] {
+/**
+ * Basic BFS with logic to return hits on:
+ * `parsed === targetParsed` and/or `id === targetId`
+ * 
+ * toLowerCase() enforced
+ * @param data 
+ * @param targetParsed 
+ * @param targetId 
+ * @param match 
+ * @returns 
+ */
+export function bfsSearchMultiTarget(data: types.stmtTreeSit, targetParsed: string = '', targetId: string = '', match: 'parsed' | 'id' | 'both'): types.searchReturn {
+	let _path = ''
 	const hits: types.stmtTreeSit[] = [];
-	const tp = targetParsed.toLowerCase();
-	const tid = targetId.toLowerCase();
+	if (!data) return {data: hits, path: _path};
 
-	const visit = (node: types.stmtTreeSit) => {
-		const parsedOK = node.parsed.toLowerCase() === tp;
-
-		if (findId) {
-		
-		if (parsedOK) hits.push(node);
-		} else {
-		
-		const idOK = !targetId || node.id.toLowerCase() === tid;
-		if (parsedOK && idOK) hits.push(node);
+	const queue = [data];
+	while (queue.length) {
+		const node = queue.shift();
+		if (match === 'both') {
+			if ((node?.id.toLowerCase() === targetId.toLowerCase()) && node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
+				hits.push(node)
+			}
 		}
-
-		if (node.nextstmt) {
-		for (const child of node.nextstmt) visit(child);
+		else if (match === 'parsed') {
+			if (node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
+				hits.push(node)
+			}
 		}
+		else {
+			if (node?.id.toLowerCase() === targetId.toLowerCase()) {
+				hits.push(node)
+			}
+		}
+		if (node?.nextstmt && node.nextstmt.length > 0) {
+			for (const child of node.nextstmt) queue.push(child);
+		}
+	}
+	return {
+		path: _path,
+		data: hits
 	};
-
-	if (Array.isArray(data)) {
-		for (const n of data) visit(n);
-	} else if (data) {
-		visit(data);
-	}
-
-	return hits;
-	}
-
-export function bfsDiagnostics(root: types.stmtTreeSit, doc: TextDocument) {
+}
+/**
+ * Creates diagnostics by calling `bfsSearchMultiTarget(root, "ERROR", "", 'parsed')`
+ * which searches for nodes with a parsed value of `error`
+ * 
+ * @param root 
+ * @param doc 
+ * @returns 
+ */
+export function createDiagnosticErrors(root: types.stmtTreeSit, doc: TextDocument) {
 	if (!root) return;
 
 	const diagnostics: Diagnostic[] = [];
-	// console.log(JSON.stringify(root,null,2))
-	// const q: types.stmtTreeSit[] = [errorRoot];
-	// console.log((q[3].coords.split("-"))[0].split(":"))
-	// console.log((q[3].coords.split("-"))[1].split(":"))
-	// console.log(root.nextstmt.length)
-	// console.log("===")
-	// console.log(root);
-	const errors = (treeSearchMulti(root,"ERROR",'',true, )) // bruh
-	// console.log(errors)
+	const errors = (bfsSearchMultiTarget(root, "ERROR", "", 'parsed')).data // bruh
 
 	for (var i = 0; i < errors.length; i++) {
-			const fancystart =  (errors[i].coords.split("-"))[0].split(":")
-			const fancyend = (errors[i].coords.split("-"))[1].split(":")
-			const start: Position = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) }
-			const end: Position = { line: parseInt(fancyend[0]), character: parseInt(fancyend[1]) }
-			const diagnostic: Diagnostic = {
-				severity: DiagnosticSeverity.Error,
-				range: {
-					start: start,
-					end: end,
-				},
-				message: `Our parsing does not permit more in depth error checking`,
-				source: '\n\nIt is recommended to check out the docs: https://www.postgresql.org/docs/current/sql.html'
-			};
-			diagnostics.push(diagnostic);
-		// const { start, end, kind } = classify(node); // map node → tokenType/modifiers
-		// if (n.nextstmt) q.push(...n.nextstmt);
-  	}
+		const fancystart = (errors[i].coords.split("-"))[0].split(":")
+		const fancyend = (errors[i].coords.split("-"))[1].split(":")
+		const start: Position = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) }
+		const end: Position = { line: parseInt(fancyend[0]), character: parseInt(fancyend[1]) }
+		const diagnostic: Diagnostic = {
+			severity: DiagnosticSeverity.Error,
+			range: {
+				start: start,
+				end: end,
+			},
+			message: `Our parsing does not permit more in depth error checking`, // maybe find more in depth error reporting?
+			source: '\n\nIt is recommended to check out the docs: https://www.postgresql.org/docs/current/sql.html'
+		};
+		diagnostics.push(diagnostic);
+	}
 	return diagnostics
 }
-
+/**
+ * Basic BFS with logic to create and sort highlights by start position
+ * 
+ * @param root 
+ * @param doc 
+ * @returns 
+ */
 export function bfsHighlighint(root: types.stmtTreeSit, doc: TextDocument): SemanticTokensBuilder | undefined {
-  	if (!root) return;
+	if (!root) return;
 
 	const builder = new SemanticTokensBuilder();
-
 	const q: types.stmtTreeSit[] = [root];
-	// console.log((q[3].coords.split("-"))[0].split(":"))
-	// console.log((q[3].coords.split("-"))[1].split(":"))
+	const queue: any = [] // lol
 
-	const queue: any = []
-
-	// q.shift()!;
 	while (q.length) {
 		const n = q.shift()!;
-		if (n.parsed.includes("keyword") || n.parsed.includes("identifier") || n.parsed.includes("literal")) { // quick check! IMPLEMENT THIS OUT
-			const fancystart =  (n.coords.split("-"))[0].split(":")
+		if (n.parsed.includes("keyword") || n.parsed.includes("identifier") || n.parsed.includes("literal")) { // ensures we only look at nodes we want to color
+
+			const fancystart = (n.coords.split("-"))[0].split(":")
 			const fancyend = (n.coords.split("-"))[1].split(":")
 			const start: Position = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) }
 			const end: Position = { line: parseInt(fancyend[0]), character: parseInt(fancyend[1]) }
 			const length = doc.offsetAt(end) - doc.offsetAt(start)
+
 			let type;
+
 			if (n.parsed.includes('keyword')) {
 				type = tokenTypes.indexOf("keyword")
 			}
@@ -361,40 +360,31 @@ export function bfsHighlighint(root: types.stmtTreeSit, doc: TextDocument): Sema
 				type = tokenTypes.indexOf("identifier")
 			}
 			else if (n.parsed.includes('literal')) {
-				// console.log((parseInt(n.parsed)), (parseFloat(n.parsed)), isNaN(parseInt(n.parsed)) && (n.parsed))
 				if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
 					type = tokenTypes.indexOf("literalStr")
 				}
 				else type = tokenTypes.indexOf("literalNum")
 			}
-			else if (n.parsed.includes('error')) {
-				// console.log((parseInt(n.parsed)), (parseFloat(n.parsed)), isNaN(parseInt(n.parsed)) && (n.parsed))
-				if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
-					type = tokenTypes.indexOf("literalStr")
-				}
-				else type = tokenTypes.indexOf("literalNum")
-			}
+			// add all nodes to queue (out of order)
 			queue.push({
 				oft: doc.offsetAt(start),
 				stl: start.line,
 				stc: start.character,
 				len: length,
 				typ: type,
-				dum: 0 // bitmask of modifiers
+				dum: 0
 			});
 		}
-		// const { start, end, kind } = classify(node); // map node → tokenType/modifiers
 		if (n.nextstmt) q.push(...n.nextstmt);
-  	}
-	queue.sort((a: any, b: any) => a.oft - b.oft);
-	for (var i = 0; i < queue.length; i++) {
-		// console.log('==\nstartl: ', queue[i].stl)
-		// console.log('startc: ', queue[i].stc)
-		builder.push(queue[i].stl,queue[i].stc,queue[i].len,queue[i].typ,queue[i].dum)
+	}
+	queue.sort((a: any, b: any) => a.oft - b.oft); // now we sort queue because semantic highlights require inputs to be in order
+
+	for (var i = 0; i < queue.length; i++) { // push ordered queue into semantic highlight builder
+		builder.push(queue[i].stl, queue[i].stc, queue[i].len, queue[i].typ, queue[i].dum)
 	}
 	// console.log(builder)
 	return builder
-} 
+}
 
 
 

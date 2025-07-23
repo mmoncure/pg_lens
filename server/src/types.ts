@@ -2,6 +2,11 @@ import { ParseResult, RawStmt } from 'libpg-query'
 
 // New (treesitter)
 
+type searchReturn = {
+	data: any,
+	path: string,
+}
+
 type stmtTreeSit = {
 	coords: string,
     parsed: string,
@@ -222,4 +227,5 @@ export {
 	stmtTreeSit,
 	stmtsTreeSit,
 	stmtCompletionData,
+	searchReturn,
 }
