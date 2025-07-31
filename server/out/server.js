@@ -61,7 +61,7 @@ connection.onInitialize((params) => {
             // Tell the client that this server supports code completion.
             completionProvider: {
                 resolveProvider: true,
-                triggerCharacters: [' ']
+                triggerCharacters: [' ', '(', ',']
             },
             diagnosticProvider: {
                 interFileDependencies: false,
@@ -70,7 +70,7 @@ connection.onInitialize((params) => {
             semanticTokensProvider: {
                 legend: exports.legend,
                 full: true,
-                range: true
+                // range: true
             },
         }
     };
@@ -143,20 +143,14 @@ documents.onDidClose(e => {
 //   }
 // };
 connection.languages.semanticTokens.on(async (params) => {
-    // let t = Date.now()
-    // console.log("test")
+    const builder = new node_1.SemanticTokensBuilder();
     const doc = documents.get(params.textDocument.uri);
-    const text = doc.getText();
-    const ast = await pg_lens.createContext(text, clientParse); // your parser/pg_lens result
-    const builder = pg_lens.bfsHighlighint(ast, doc);
-    if (builder == undefined) {
-        let fail = new node_1.SemanticTokensBuilder;
-        console.log("failed to build semantic highlighter");
-        return fail.build();
+    const ast = await pg_lens.parse(clientParse, doc.getText(), "", true, "");
+    let highlights = await pg_lens._flatHighlights(ast, doc);
+    for (let i = 0; i < highlights.length; i++) {
+        builder.push(highlights[i].stl, highlights[i].stc, highlights[i].len, highlights[i].typ, highlights[i].dum);
     }
     let b = builder.build();
-    // console.log(b)
-    // console.log(Date.now()-t)
     return b;
 });
 connection.languages.diagnostics.on(async (params) => {
@@ -192,9 +186,22 @@ connection.languages.diagnostics.on(async (params) => {
 // 	}
 // }
 async function validateTextDocument(params, textDocument) {
-    const text = textDocument.getText();
-    const tree = await pg_lens.createContext(text, clientParse);
-    const diagnostics = pg_lens.createDiagnosticErrors(tree, textDocument);
+    const diagnostics = [];
+    const tree = await pg_lens.parse(clientParse, textDocument.getText(), "", true, "");
+    // console.log(tree)
+    const diagHits = await pg_lens._flatDiagnostics(tree);
+    for (var i = 0; i < diagHits.length; i++) {
+        const diagnostic = {
+            severity: diagHits[i].severity,
+            range: {
+                start: diagHits[i].range.start,
+                end: diagHits[i].range.end,
+            },
+            message: `Our parsing does not permit more in depth error checking`, // maybe find more in depth error reporting?
+            source: '\n\nIt is recommended to check out the docs: https://www.postgresql.org/docs/current/sql.html'
+        };
+        diagnostics.push(diagnostic);
+    }
     if (diagnostics === undefined) {
         console.log('Something went wrong while generating diagnostics');
         return [];
@@ -207,157 +214,33 @@ connection.onDidChangeWatchedFiles(_change => {
 });
 connection.onCompletion(async (params) => {
     const doc = documents.get(params.textDocument.uri);
-    // console.log(doc)
-    // let f: any = await pg_lens.parse(clientCompletion, doc?.getText() || "","",true,"stdout")
     if (!doc)
         return [];
-    // GENERIC
-    var check_po; // checks ( *open parenthesis*
-    // DML
-    var table_ex; // table exists
-    var check_on; // checks ON
-    var check_se; // checks SELECT
-    var check_ob; // checks ORDER BY
-    var check_gb; // checks GROUP BY
-    var check_pb; // checks PARTITION BY
-    var check_wh; // checks WHERE
-    var check_fr; // checks FROM
-    // FUNCTIONS
-    var check_fn; // checks *keyword_function*
-    var check_or; // checks *object_reference*
-    // snags the current statement (used for contextual completions)
-    let txt = doc.getText();
-    const { line, character } = params.position;
     let found = false;
     let i = doc.offsetAt(params.position);
     for (i; i > 0 && found === false; i--) {
-        if (txt[i] === ';')
+        if (doc.getText()[i] === ';')
             found = true;
         // console.log(`${txt[i]} == ; @ ${i}`)
     }
+    const completions = [];
     if (found) { // more than one statement, so use current
-        // console.log(`${i} => ${doc.offsetAt(params.position)}`)
-        // console.log(txt.substring(i+2,doc.offsetAt(params.position)))
-        let g = (await pg_lens.createContext(txt.substring(i + 2, doc.offsetAt(params.position)), clientCompletion));
-        /* incomplete statement results in error:
-                SELECT *
-                    SELECT *   (OK)
-
-                SELECT * FROM
-                    SELECT *   (OK)
-                    FROM       (ERROR)
-
-                SELECT * FROM "DOG"
-                    SELECT *   (OK)
-                    FROM DOG   (OK)
-
-                SELECT * FROM "DOG" WHERE
-                    SELECT *   (OK)
-                    FROM DOG   (OK)
-                    WHERE	   (ERROR)
-        */
-        // Check ONLY the last keyword in the statement
-        // column lookup (Prompt on keywords, SELECT, WHERE, BY, ON, SET, INTO) TODO: HAVING
-        // ON and SELECT don't ERROR, all others create ERROR (ERROR = final term, NOERROR = leaf)
-        let tree = g.nextstmt[0];
-        // console.log(JSON.stringify(tree,null,2))
-        // search for table
-        table_ex = (pg_lens.bfsSearchFirstTarget(tree, "relation", "", true)).data; // maybe, might need changing (object_reference also contains important data)
-        // complex 
-        check_on = (pg_lens.bfsSearchFirstTarget(tree, "term", "ON", false)).data; // checks for unfinished ON
-        check_se = (pg_lens.bfsSearchFirstTarget(tree, "select_expression", "", false)).data; // checks for unfinished SELECT
-        check_ob = (pg_lens.bfsSearchFirstTarget(tree, "order_target", "", false)).data; // checks for unfinished ORDER BY
-        check_gb = (pg_lens.bfsSearchFirstTarget(tree, "group_by", "GROUP BY", false)).data; // checks for unfinished GROUP BY
-        check_pb = (pg_lens.bfsSearchFirstTarget(tree, "partition_by", "PARTITION BY", false)).data; // checks for unfinished PARTITION BY
-        check_po = (pg_lens.bfsSearchFirstTarget(tree, "(", "(", false).data && !pg_lens.bfsSearchFirstTarget(tree, ")", ")", false).data);
-        // easier lol (cause errors more directly)
-        check_wh = (pg_lens.bfsSearchFirstTarget(tree, "error", "WHERE", false)).data; // checks for unfinished WHERE
-        // table lookup
-        check_fr = (pg_lens.bfsSearchFirstTarget(tree, "error", "FROM", false)).data; // checks for unfinished FROM
+        const flatstmts = await pg_lens.parse(clientParse, doc.getText().substring(i + 2, doc.offsetAt(params.position)), "", true, "");
+        const avail_completions = await pg_lens._createCompletions(flatstmts, clientCompletion);
+        for (let i = 0; i < avail_completions.length; i++) {
+            completions.push({
+                detail: avail_completions[i].detail,
+                insertText: avail_completions[i].insertText,
+                label: avail_completions[i].label,
+                kind: node_1.CompletionItemKind.Text
+            });
+        }
     }
     else { // treat entire doc like the first statement
         // console.log(`${0} => ${doc.offsetAt(params.position)}`)
         // console.log(txt.substring(0,doc.offsetAt(params.position)))
     }
-    const beforeCursor = doc.getText({
-        start: { line, character: 0 },
-        end: { line, character }
-    });
-    const m = /(?:^|\s)(test)\.$/.exec(beforeCursor);
-    // console.log(m != null ? m['1']: 0)
-    console.log("tb: ", table_ex);
-    console.log("on: ", check_on);
-    console.log("se: ", check_se);
-    console.log("ob: ", check_ob);
-    console.log("gb: ", check_gb);
-    console.log("pb: ", check_pb);
-    console.log("po: ", check_po);
-    console.log("wh: ", check_wh);
-    console.log("fr: ", check_fr);
-    console.log("===");
-    if (check_se) {
-        await clientCompletion.query('BEGIN');
-        var cols = (await clientCompletion.query(`SELECT column_name FROM table_columns`)).rows;
-        await clientCompletion.query('COMMIT');
-        var retval = [
-            {
-                label: "*",
-                kind: node_1.CompletionItemKind.Text,
-                detail: 'none for now',
-                insertText: "*"
-            }
-        ];
-        cols.map(x => {
-            retval.push({
-                label: x.column_name,
-                kind: node_1.CompletionItemKind.Text,
-                detail: 'none for now',
-                insertText: x.column_name
-            });
-        });
-        // console.log(retval)
-        return retval;
-    }
-    else if (check_wh && table_ex) {
-        // console.log("yes!")
-        await clientCompletion.query('BEGIN');
-        let test = `SELECT column_name FROM table_columns WHERE table_name=$1`;
-        var cols = (await clientCompletion.query(test, [table_ex])).rows;
-        await clientCompletion.query('COMMIT');
-        var retval = [];
-        cols.map(x => {
-            retval.push({
-                label: x.column_name,
-                kind: node_1.CompletionItemKind.Text,
-                detail: 'none for now',
-                insertText: x.column_name
-            });
-        });
-        // console.log(retval)
-        return retval;
-    }
-    else {
-        // FOR NOW NOTHING!
-        return [];
-        // return [
-        // {
-        // 	label: 'Not',
-        // 	kind: CompletionItemKind.Text,
-        // 	detail: 'lol',
-        // 	insertText: 'Not'
-        // },
-        // {
-        // 	label: 'Very',
-        // 	kind: CompletionItemKind.Text,
-        // 	insertText: 'Very'
-        // },
-        // {
-        // 	label: 'Swag',
-        // 	kind: CompletionItemKind.Text,
-        // 	insertText: 'Swag'
-        // }
-        // ];
-    }
+    return completions;
 });
 // This handler resolves additional information for the item selected in
 // the completion list.
@@ -371,8 +254,8 @@ documents.onDidChangeContent(async (params) => {
     if (clientParse !== undefined) {
         try {
             const doc = params.document.getText();
-            let f = await pg_lens.parse(clientParse, doc, "", true, "stdout");
-            // console.log(JSON.stringify(f,null,2))
+            let f = await pg_lens.parse(clientParse, doc, "", true, "db");
+            // console.log(f)
         }
         catch (e) {
             console.log("Parsing failed: ");

@@ -6,6 +6,7 @@
 export { _flattenedSearchSingleTarget } from './util/search'
 export { _flatHighlights } from './semantic/SemanticHighlights'
 export { _flatDiagnostics } from './diagnostic/diagnostics'
+export { _createCompletions } from './completion/completion'
 
 
 import { Client, PoolClient } from 'pg'
@@ -21,10 +22,14 @@ parser.setLanguage(SQL);
 
 let argv: any;
 
-const preInsertDelete = `DELETE FROM "table_columns" WHERE table_schema='public'` // change ASAP
-const insertText = `
+const preTableInsertDelete = `DELETE FROM "table_columns"`
+const tableInsertText = `
 	INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
+const preFunctionInsertDelete = `DELETE FROM "function_args"`
+const functionInsertText = `
+	INSERT INTO "function_args" (function_name, argument_name, argument_type, argument_default, stmt, start_position, end_position)
+	VALUES ($1, $2, $3, $4, $5, $6, $7);`;	
 
 try {
 	argv = yargs(process.argv.slice(2)).options({
@@ -56,10 +61,27 @@ export async function parse(client: PoolClient, doc: string, outPath: string | u
 
 		try {
 			// add DDL to db (CREATE TABLE for now)
-			await client.query('BEGIN')
-			await client.query(preInsertDelete)
-			await _insertColumns(client, munchedSQL)
-			await client.query('COMMIT')
+			try {
+				await client.query('BEGIN')
+				await client.query(preTableInsertDelete)
+				await _insertTableColumns(client, munchedSQL)
+				await client.query('COMMIT')
+			}
+			catch(e) {
+				await client.query('ROLLBACK')
+				console.error(e)
+			}
+			try {
+				await client.query('BEGIN')
+				await client.query(preFunctionInsertDelete)
+				await _insertFunctionColumns(client, munchedSQL)
+				await client.query('COMMIT')
+			}
+			catch(e) {
+				await client.query('ROLLBACK')
+				console.error(e)
+			}
+
 			// await client.release() // Don't release, we want to use the same clients
 		}
 		catch (e) {
@@ -80,7 +102,13 @@ export async function dfsFlatten(node: ParserTS.SyntaxNode, _path: string, ret: 
 	if (type === "column_definition") {
 		_path += `=${node.text.replace(/\n/g, "\\n")}`
 	}
-	const stmtObj: types.stmtFlatTreeSit = {
+	if (type === "function_argument") {
+		_path += `=${node.text.replace(/\n/g, "\\n")}`
+	}
+	if (type === "object_reference") {
+		_path += `=${node.text.replace(/\n/g, "\\n")}`
+	}
+ 	const stmtObj: types.stmtFlatTreeSit = {
 		coords: coord,
 		parsed: `${type}`,
 		id: `${node.text.replace(/\n/g, "\\n")}`,
@@ -95,33 +123,61 @@ export async function dfsFlatten(node: ParserTS.SyntaxNode, _path: string, ret: 
 }
 
 async function _collectNodes(nodes: types.flattenedStmts, match: string) {
-	let results: any = []
+	let results: any[] = []
 	nodes.forEach(node => {
 		if (node.parsed === match) results.push(node)
 	})
 	return results
 }
 
-async function _insertColumns(client: PoolClient, nodes: types.flattenedStmts) {
-
+async function _insertTableColumns(client: PoolClient, nodes: types.flattenedStmts) {
 
 		const columns = await _collectNodes(nodes, "column_definition")
 		if (!columns) return;
 		const idents = await _collectNodes(nodes, "identifier")
 		if (!idents) return;
-		const relation = await _collectNodes(nodes, "object_reference")
-		if (!relation) return;
+		const relations = await _collectNodes(nodes, "object_reference") // need to implement going forward
+		if (!relations) return;
 
-		for (const leaf of columns) {
+		for (const col of columns) {
+
+			let relation: any
+
+			// workaround for tree crap, matches obj_ref to col by coords
+			for (let i = relations.length - 1; i >= 0; i--) { 
+				let colStart = col.coords.split(' - ')[0].split(":")
+				let relationStart = relations[i].coords.split(' - ')[0].split(":")
+
+				const linecheck = parseInt(colStart[0]) > parseInt(relationStart[0]) && !relations[i].path.includes("column_definition")
+
+				const lineeq = parseInt(colStart[0]) == parseInt(relationStart[0])
+
+				const charcheck = parseInt(colStart[1]) > parseInt(relationStart[1])
+
+				// console.log(`lc: ${parseInt(colStart[0])} > ${parseInt(relationStart[0])}\nle: ${lineeq}\ncc: ${parseInt(colStart[1])} > ${parseInt(relationStart[1])}\n`)
+
+				if (linecheck) {
+					// console.log('linecheck')
+					relation = relations[i].id
+					break;
+				}
+				else if (lineeq) {
+					if (charcheck) {
+						// console.log('charcheck')
+						relation = relations[i].id
+						break;
+					}
+				}
+			}
 
 			// god bless the order
 
-			const idsIdx =  nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(leaf.path) && n.
+			const idsIdx =  nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(col.path) && n.
 			parsed === ("identifier"))
 			const ids = nodes[idsIdx]
 
 			if (ids === undefined || ids.parsed === undefined) {
-				console.error('No children: ', leaf);
+				console.error('No children: ', col);
 				return
 			}
 
@@ -144,24 +200,114 @@ async function _insertColumns(client: PoolClient, nodes: types.flattenedStmts) {
 				}
 			}
 
-			const hasNotNull = (leaf.id.toLowerCase().includes("not") && leaf.id.toLowerCase().includes("null"))
+			const hasNotNull = (col.id.toLowerCase().includes("not") && col.id.toLowerCase().includes("null"))
 
-			const hasDefault = leaf.id.toLowerCase().split(" ").findIndex((dlm: string) => dlm === 'default')
+			const hasDefault = col.id.toLowerCase().split(" ").findIndex((dlm: string) => dlm === 'default')
 
-			// same thing here as above, expecting default value as next index... too bad lol
+			const absoluteDefault = hasDefault >= 0 ? nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(col.path) && n.parsed.toLowerCase().includes('default') ) : -1
 
-			const colDefault = hasDefault >= 0 && nodes[hasDefault + 1] ? nodes[hasDefault + 1].id : null;
+			const colDefault = hasDefault >= 0 && absoluteDefault >= 0 ? nodes[absoluteDefault + 1].id : null;
 
 			try {
 				/*
 					INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
 					VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
 				*/
-				let g = await client.query(insertText, ["public", idents[0].id, colName, typeNode.id, hasNotNull, colDefault, leaf.id, startpos, endpos]);
-				console.log(g)
+				let g = await client.query(tableInsertText, ["public", relation, colName, typeNode.id, hasNotNull, colDefault, col.id, startpos, endpos]);
+				// console.log(g)
 			}
 			catch (e: any) {
 				// console.log("Probably an SQL error, but logged nonetheless")
+				throw e
+			}
+		}
+}
+
+async function _insertFunctionColumns(client: PoolClient, nodes: types.flattenedStmts) {
+
+		const args = await _collectNodes(nodes, "function_argument")
+		if (!args) return;
+		const idents = await _collectNodes(nodes, "identifier")
+		if (!idents) return;
+		const relations = await _collectNodes(nodes, "object_reference")
+		if (!relations) return;
+		
+		let relation: any;
+
+		for (const arg of args) {
+
+			for (let i = relations.length - 1; i >= 0; i--) { 
+				let argStart = arg.coords.split(' - ')[0].split(":")
+				let relationStart = relations[i].coords.split(' - ')[0].split(":")
+
+				const linecheck = parseInt(argStart[0]) > parseInt(relationStart[0]) && !relations[i].path.includes("function_argument")
+
+				const lineeq = parseInt(argStart[0]) == parseInt(relationStart[0])
+
+				const charcheck = parseInt(argStart[1]) > parseInt(relationStart[1])
+
+				// console.log(`lc: ${parseInt(argStart[0])} > ${parseInt(relationStart[0])}\nle: ${lineeq}\ncc: ${parseInt(argStart[1])} > ${parseInt(relationStart[1])}\n`)
+
+				if (linecheck) {
+					// console.log('linecheck')
+					relation = relations[i].id
+					break;
+				}
+				else if (lineeq) {
+					if (charcheck) {
+						// console.log('charcheck')
+						relation = relations[i].id
+						break;
+					}
+				}
+			}
+
+			// god bless the order
+
+			const idsIdx =  nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(arg.path) && n.
+			parsed === ("identifier"))
+			const ids = nodes[idsIdx]
+
+			if (ids === undefined || ids.parsed === undefined) {
+				console.error('No children: ', arg);
+				return
+			}
+
+			const argName = ids.id
+			const startpos = ids.coords.split(" - ")[0]
+			const endpos = ids.coords.split(" - ")[1]
+
+			const datatypes = types.DATATYPE_KEYWORDS; // this is bad, needs work
+			
+			// really ghetto. I'm going to assume next index after Ident is type... can break
+			// if broken sql, but then we shouldn't be adding to db anyway, so I'm just going to do it.
+
+			let typeNode = nodes[idsIdx + 1] // [..., ident, keyword, ...]
+
+			if (!datatypes.includes(typeNode.id.toLowerCase())) {
+				if (typeNode.id.toLowerCase().includes(typeNode.parsed)) typeNode = nodes[idsIdx + 2]
+				else {
+					console.log("can't find datatype", typeNode.id)
+					return
+				}
+			}
+
+			const hasDefault = arg.id.toLowerCase().split(" ").findIndex((dlm: string) => dlm === 'default')
+
+			const absoluteDefault = hasDefault >= 0 ? nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(arg.path) && n.parsed.toLowerCase().includes('default') ) : -1
+
+			const colDefault = hasDefault >= 0 && absoluteDefault >= 0 ? nodes[absoluteDefault + 1].id : null;
+
+			try {
+				/*
+					INSERT INTO "function_args" (function_name, argument_name, argument_type, argument_default, stmt, start_position, end_position)
+					VALUES ($1, $2, $3, $4, $5, $6, $7);`
+				*/
+				const g = (await client.query(functionInsertText, [relation, argName, typeNode.id, colDefault, arg.id, startpos, endpos]))
+				// console.log(g)
+			}
+			catch (e: any) {
+				// console.error("Probably an SQL error, but logged nonetheless\n\n", e)
 				throw e
 			}
 		}
@@ -276,7 +422,7 @@ async function _insertColumns(client: PoolClient, nodes: types.flattenedStmts) {
 // 				const colDefault = hasDefault >= 0 && children[hasDefault + 1] ? children[hasDefault + 1].id : null;
 
 // 				try {
-// 					let g = await client.query(insertText, [defaultSchema, idents[0].id, colName, colType, hasNotNull, colDefault, stmtObj.id, startpos, endpos]);
+// 					let g = await client.query(tableInsertText, [defaultSchema, idents[0].id, colName, colType, hasNotNull, colDefault, stmtObj.id, startpos, endpos]);
 // 				}
 // 				catch (e: any) {
 // 					// console.log("Probably an SQL error, but logged nonetheless")

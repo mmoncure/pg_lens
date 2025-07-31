@@ -38,6 +38,14 @@ type diagnosticData = {
 	source: string,
 }
 
+type completionData = {
+  label: string,
+  insertText: string,
+  detail: string,
+}
+
+type completionReturn = completionData[]
+
 type diagnosticReturn = diagnosticData[]
 
 type highlightReturn = highlightData[]
@@ -267,6 +275,7 @@ export const TYPE_ALIASES: Record<string, string[]> = {
 
 
 export {
+  completionReturn,
 	diagnosticReturn,
 	multiSearchReturn,
 	highlightReturn,
