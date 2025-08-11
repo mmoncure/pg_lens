@@ -1,6 +1,6 @@
 import * as main from './main'
 import * as ParserTS from 'tree-sitter'
-import * as SQL from '@derekstride/tree-sitter-sql'
+import * as SQL from '@maximjov/tree-sitter-sql'
 import * as types from './types'
 import * as fs from 'fs'
 

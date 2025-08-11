@@ -18,7 +18,7 @@ const dotenv = require("dotenv");
 const yargs_1 = require("yargs");
 const types = require("./types");
 const ParserTS = require("tree-sitter");
-const SQL = require("@derekstride/tree-sitter-sql");
+const SQL = require("@maximjov/tree-sitter-sql");
 const parser = new ParserTS();
 parser.setLanguage(SQL);
 let argv;
@@ -165,12 +165,7 @@ async function _insertTableColumns(client, nodes) {
         // if broken sql, but then we shouldn't be adding to db anyway, so I'm just going to do it.
         let typeNode = nodes[idsIdx + 1]; // [..., ident, keyword, ...]
         if (!datatypes.includes(typeNode.id.toLowerCase())) {
-            if (typeNode.id.toLowerCase().includes(typeNode.parsed))
-                typeNode = nodes[idsIdx + 2];
-            else {
-                console.log("can't find datatype", typeNode.id);
-                return;
-            }
+            typeNode = nodes[idsIdx + 2];
         }
         const hasNotNull = (col.id.toLowerCase().includes("not") && col.id.toLowerCase().includes("null"));
         const hasDefault = col.id.toLowerCase().split(" ").findIndex((dlm) => dlm === 'default');

@@ -7,6 +7,8 @@ exports.legend = exports.tokenModifiers = exports.tokenTypes = void 0;
  * ------------------------------------------------------------------------------------------ */
 const node_1 = require("vscode-languageserver/node");
 const pg_1 = require("pg");
+const path = require("path");
+const fs = require("fs");
 const vscode_languageserver_textdocument_1 = require("vscode-languageserver-textdocument");
 const pg_lens = require("./parse/main");
 const pool = new pg_1.Pool({
@@ -255,6 +257,13 @@ documents.onDidChangeContent(async (params) => {
         try {
             const doc = params.document.getText();
             let f = await pg_lens.parse(clientParse, doc, "", true, "db");
+            try {
+                console.log('Writing to:', path.resolve('./test.json'));
+                fs.writeFileSync(`${process.cwd()}/test.json`, JSON.stringify(f, null, 2));
+            }
+            catch (err) {
+                console.error('Failed to write file:', err);
+            }
             // console.log(f)
         }
         catch (e) {

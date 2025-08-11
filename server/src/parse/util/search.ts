@@ -1,6 +1,6 @@
 import * as types from '../types'
 import * as ParserTS from 'tree-sitter'
-import * as SQL from '@derekstride/tree-sitter-sql'
+import * as SQL from '@maximjov/tree-sitter-sql'
 
 export async function _flattenedSearchSingleTarget(data: types.flattenedStmts, targetParsed: string, targetId: String, findId: boolean = false): Promise<types.searchReturn> {
 	// console.log(targetParsed, " ", targetId, " ",  findId)

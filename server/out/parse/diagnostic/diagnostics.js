@@ -22,7 +22,7 @@ async function _flatDiagnostics(root) {
         // console.log(errors[i].data.id.toLowerCase(), "\n\n")
         // console.log('f')
         if (!errors[i].data.path.toLowerCase().includes("function")) {
-            console.log("TRUE");
+            // console.log("TRUE")
             hits.push({
                 severity: DiagnosticSeverity.Error,
                 range: {

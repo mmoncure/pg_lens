@@ -2,7 +2,7 @@ import * as types from '../types'
 import { Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
 import { _flattenedSearchMultiTarget } from '../util/search'
 import * as ParserTS from 'tree-sitter'
-import * as SQL from '@derekstride/tree-sitter-sql'
+import * as SQL from '@maximjov/tree-sitter-sql'
  
 const DiagnosticSeverity = {
 	Error: 1,
@@ -27,7 +27,7 @@ export async function _flatDiagnostics(root: types.flattenedStmts): Promise<type
 		// console.log(errors[i].data.id.toLowerCase(), "\n\n")
 		// console.log('f')
 		if (!errors[i].data.path.toLowerCase().includes("function")) {
-			console.log("TRUE")
+			// console.log("TRUE")
 			hits.push({
 				severity: DiagnosticSeverity.Error,
 				range: {

@@ -15,7 +15,7 @@ import yargs, { boolean } from 'yargs'
 
 import * as types from './types'
 import * as ParserTS from 'tree-sitter'
-import * as SQL from '@derekstride/tree-sitter-sql'
+import * as SQL from '@maximjov/tree-sitter-sql'
 
 const parser = new ParserTS();
 parser.setLanguage(SQL);
@@ -193,11 +193,7 @@ async function _insertTableColumns(client: PoolClient, nodes: types.flattenedStm
 			let typeNode = nodes[idsIdx + 1] // [..., ident, keyword, ...]
 
 			if (!datatypes.includes(typeNode.id.toLowerCase())) {
-				if (typeNode.id.toLowerCase().includes(typeNode.parsed)) typeNode = nodes[idsIdx + 2]
-				else {
-					console.log("can't find datatype", typeNode.id)
-					return
-				}
+				typeNode = nodes[idsIdx + 2]
 			}
 
 			const hasNotNull = (col.id.toLowerCase().includes("not") && col.id.toLowerCase().includes("null"))

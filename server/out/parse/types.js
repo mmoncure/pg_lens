@@ -55,6 +55,7 @@ exports.DATATYPE_KEYWORDS = [
     'keyword_interval',
     'int',
     'null',
+    'bool',
     'boolean',
     'binary',
     'varbinary',

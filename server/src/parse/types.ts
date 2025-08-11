@@ -158,6 +158,7 @@ export const DATATYPE_KEYWORDS: string[] = [
 
   'int',
   'null',
+  'bool',
   'boolean',
   'binary',
   'varbinary',

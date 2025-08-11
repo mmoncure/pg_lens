@@ -27,6 +27,9 @@ import {
 
 import { Pool, PoolClient } from 'pg'
 
+import * as path from 'path'
+import * as fs from 'fs'
+
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
@@ -340,6 +343,12 @@ documents.onDidChangeContent(async (params) => {
 		try {
 			const doc = params.document.getText()
 			let f: any = await pg_lens.parse(clientParse, doc,"",true,"db")
+			try {
+				console.log('Writing to:', path.resolve('./test.json'));
+				fs.writeFileSync(`${process.cwd()}/test.json`, JSON.stringify(f, null, 2));
+			} catch (err) {
+				console.error('Failed to write file:', err);
+			}
 			// console.log(f)
 		} 
 		catch (e) {

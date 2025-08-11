@@ -2,7 +2,7 @@ import * as types from '../types'
 import { Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
 import { _flattenedSearchMultiTarget, _flattenedSearchSingleTarget } from '../util/search'
 import * as ParserTS from 'tree-sitter'
-import * as SQL from '@derekstride/tree-sitter-sql'
+import * as SQL from '@maximjov/tree-sitter-sql'
 import { Pool, PoolClient } from 'pg';
 import { freemem } from 'os';
 import { check } from 'yargs';

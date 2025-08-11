@@ -15,6 +15,7 @@
 		"tran": "./bin/index.js"
 	},
 	"dependencies": {
+		"@maximjov/tree-sitter-sql": "^0.4.0",
 		"dotenv": "^16.5.0",
 		"libpg-query": "^17.1.1",
 		"pg": "^8.16.0",
