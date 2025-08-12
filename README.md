@@ -1,5 +1,5 @@
 # PG_Lens
-    To specify, this branch is built around the vscode lsp extension source; do not expect it to function outside of vscode.
+To specify, this branch is built around the vscode lsp extension source; do not expect it to function outside of vscode.
 
 ## Sample usage
 
