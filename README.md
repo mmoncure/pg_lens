@@ -1,5 +1,5 @@
 # PG_Lens
-    i need to do this lol. def needs a readme probably
+    To specify, this branch is built around the vscode lsp extension source; do not expect it to function outside of vscode.
 
 ## Sample usage
 
@@ -10,7 +10,7 @@
 ```bash
 git clone https://github.com/mmoncure/pg_lens.git
 cd pg_lens && git switch lsp-in
-npm i
+npm i && code .
 ```
 
 ## Setup
