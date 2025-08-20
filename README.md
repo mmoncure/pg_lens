@@ -1,7 +1,11 @@
 # PG_Lens
 To specify, this branch is built around the vscode lsp extension source; do not expect it to function outside of vscode.
 
-## Sample usage
+Uses Treesitter and pgsql grammar forked from @DerekStride. You can find and contribute to that [here](https://github.com/maximjov/tree-sitter-sql).
+
+## Releases
+
+Check out releases for the build .vsix extension!
 
 ## Install
 
@@ -13,8 +17,6 @@ cd pg_lens && git switch lsp-in
 npm i && code .
 ```
 
-## Setup
-
 ### Test Environment
 
 in **pg_lens** root dir:
@@ -22,7 +24,17 @@ in **pg_lens** root dir:
 mkdir .vscode && mv launch.json .vscode
 ```
 
-### Environment Variables
+Then: Run and Debug "Launch Client"
+
+or run in **pg_lens** root dir:
+```bash
+npx vsce package
+```
+to build an extension you can install into your vscode client.
+
+### Environment Secrets
+
+#### .env
 
 ```
 PG_USER="<pg_username>"
@@ -32,15 +44,10 @@ DB_NAME="<db_name>"
 PG_PORT="<pg_port>"
 ```
 
-```js
-const pool = new Pool({
-	user: process.env.PG_USER,
-	password: process.env.PG_PASS,
-	host: process.env.PG_HOST,
-	port: process.env.PG_PORT,
-	database: process.env.DB_NAME,
-});
-```
+OR...
+#### config
+
+Set secrets in package.json or extension settings
 
 ### Database scripts
 
@@ -57,7 +64,8 @@ CREATE TABLE IF NOT EXISTS public.function_args
     argument_default text COLLATE pg_catalog."default",
     stmt text COLLATE pg_catalog."default" NOT NULL,
     start_position text COLLATE pg_catalog."default",
-    end_position text COLLATE pg_catalog."default"
+    end_position text COLLATE pg_catalog."default",
+    path_file text COLLATE pg_catalog."default
 )
 
 TABLESPACE pg_default;
@@ -80,7 +88,8 @@ CREATE TABLE IF NOT EXISTS public.table_columns
     column_default text COLLATE pg_catalog."default",
     stmt text COLLATE pg_catalog."default" NOT NULL,
     start_position text COLLATE pg_catalog."default",
-    end_position text COLLATE pg_catalog."default"
+    end_position text COLLATE pg_catalog."default",
+    path_file text COLLATE pg_catalog."default"
 )
 
 TABLESPACE pg_default;
@@ -88,9 +97,3 @@ TABLESPACE pg_default;
 ALTER TABLE IF EXISTS public.table_columns
     OWNER to postgres;
 ```
-
-## Usage
-
-For now, just "Run and Debug
-
-## Dependencies
