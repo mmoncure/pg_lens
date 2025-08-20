@@ -25,14 +25,14 @@ function activate(context) {
     // Options to control the language client
     const clientOptions = {
         // Register the server for plain text documents
-        documentSelector: [{ scheme: 'file', language: 'plaintext' }],
+        documentSelector: [{ scheme: 'file', language: 'sql' }],
         synchronize: {
             // Notify the server about file changes to '.clientrc files contained in the workspace
-            fileEvents: vscode_1.workspace.createFileSystemWatcher('**/.clientrc')
+            fileEvents: vscode_1.workspace.createFileSystemWatcher('**/*.sql')
         }
     };
     // Create the language client and start the client.
-    client = new node_1.LanguageClient('languageServerExample', 'Language Server Example', serverOptions, clientOptions);
+    client = new node_1.LanguageClient('pgLens', 'PG Lens', serverOptions, clientOptions);
     // Start the client. This will also launch the server
     client.start();
 }

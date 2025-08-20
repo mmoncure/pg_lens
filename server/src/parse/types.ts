@@ -1,6 +1,15 @@
 import { ParseResult, RawStmt } from 'libpg-query'
 import { Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
 
+export const tokenTypes = [
+  'keyword','identifier','literalStr','literalNum','comment','type'
+] as const;
+
+export const tokenModifiers = [
+  'declaration','definition','readonly','static','deprecated','abstract','async',
+  'modification','documentation','defaultLibrary'
+] as const;
+
 // New (flattened)
 
 type stmtFlatTreeSit = {

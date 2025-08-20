@@ -22,7 +22,8 @@ import {
 	DocumentDiagnosticParams,
 	DidChangeTextDocumentNotification,
 	DidChangeTextDocumentParams,
-	SemanticTokensBuilder
+	SemanticTokensBuilder,
+	_Connection
 } from 'vscode-languageserver/node';
 
 import { Pool, PoolClient } from 'pg'
@@ -40,31 +41,11 @@ import * as types from './parse/types'
 import * as pg_lens from './parse/main'
 import { completion } from 'yargs';
 
-const pool = new Pool({
-	user: process.env.PG_USER,
-	password: process.env.PG_PASS,
-	host: process.env.PG_HOST,
-	port: parseInt(process.env.PG_PORT || "5432"),
-	database: process.env.DB_NAME,
-});
-
-let clientParse: PoolClient;
-let clientCompletion: PoolClient;
-
-
-(async () => {
-  try {
-    clientParse = await pool.connect();
-	clientCompletion = await pool.connect();
-  } catch (err) {
-    console.error('Failed to connect to Postgres', err);
-    process.exit(1);
-  }
-})();
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
+
 
 // Create a simple text document manager.
 const documents = new TextDocuments(TextDocument);
@@ -73,19 +54,7 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
-export const tokenTypes = [
-  'namespace','type','class','enum','interface','struct','typeParameter',
-  'parameter','variable','property','enumMember','event','function','method',
-  'macro','label','comment','string','keyword','number','regexp','operator'
-] as const;
-
-export const tokenModifiers = [
-  'declaration','definition','readonly','static','deprecated','abstract','async',
-  'modification','documentation','defaultLibrary'
-] as const;
-
-export const legend = { tokenTypes: [...tokenTypes], tokenModifiers: [...tokenModifiers] };
-
+export const legend = { tokenTypes: [...types.tokenTypes], tokenModifiers: [...types.tokenModifiers] };
 
 connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
@@ -145,27 +114,19 @@ connection.onInitialized(() => {
 	}
 });
 
-// The example settings
-interface ExampleSettings {
-	maxNumberOfProblems: number;
-}
+type PgLensSettings = { pguser?: string, pgpass?: string, pghost?: string, pgport?: string, dbname?: string }
+let defaultSettings: PgLensSettings = { pguser: 'postgres', pgpass: 'admin', pghost: 'localhost', pgport: '5432', dbname: 'postgres' }
 
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 };
-let globalSettings: ExampleSettings = defaultSettings;
+const documentSettings = new Map<string, Thenable<PgLensSettings>>()
 
-// Cache the settings of all open documents
-const documentSettings = new Map<string, Thenable<ExampleSettings>>();
 
 connection.onDidChangeConfiguration(change => {
 	if (hasConfigurationCapability) {
 		// Reset all cached document settings
 		documentSettings.clear();
 	} else {
-		globalSettings = (
-			(change.settings.languageServerExample || defaultSettings)
+		defaultSettings = (
+			(change.settings.pgLens || defaultSettings)
 		);
 	}
 	// Refresh the diagnostics since the `maxNumberOfProblems` could have changed.
@@ -174,19 +135,20 @@ connection.onDidChangeConfiguration(change => {
 	connection.languages.diagnostics.refresh();
 });
 
-function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
+function getDocumentSettings(resource: string): Thenable<PgLensSettings> {
 	if (!hasConfigurationCapability) {
-		return Promise.resolve(globalSettings);
+		return Promise.resolve(defaultSettings);
 	}
-	let result = documentSettings.get(resource);
+	const key = resource ?? '__global__'
+	let result = documentSettings.get(key)
 	if (!result) {
 		result = connection.workspace.getConfiguration({
-			scopeUri: resource,
-			section: 'languageServerExample'
-		});
-		documentSettings.set(resource, result);
+		scopeUri: resource,
+		section: 'pgLens'
+		}) as Thenable<PgLensSettings>
+		documentSettings.set(key, result)
 	}
-	return result;
+	return result
 }
 
 // Only keep settings for open documents
@@ -194,21 +156,46 @@ documents.onDidClose(e => {
 	documentSettings.delete(e.document.uri);
 });
 
-// const result: InitializeResult = {
-//   capabilities: {
-//     // ...
-//     semanticTokensProvider: {
-//       legend: { tokenTypes, tokenModifiers },
-//       full: true,
-//       range: true
-//     }
-//   }
-// };
+
+async function getPgData(scopeUri?: string) {
+  const cfg = await getDocumentSettings(scopeUri || "")
+  return {
+	pguser: cfg.pguser ?? defaultSettings.pguser,
+	pgpass: cfg.pgpass ?? defaultSettings.pgpass,
+	pghost: cfg.pghost ?? defaultSettings.pghost,
+	pgport: cfg.pgport ?? defaultSettings.pgport,
+	dbname: cfg.dbname ?? defaultSettings.dbname
+  }
+}
+
+
+const pool = async () => new Pool({
+	user: process.env.PG_USER || (await getPgData()).pguser,
+	password: process.env.PG_PASS || (await getPgData()).pgpass,
+	host: process.env.PG_HOST || (await getPgData()).pghost,
+	port: parseInt(process.env.PG_PORT || (await getPgData()).pgport || "5432"),
+	database: process.env.DB_NAME || (await getPgData()).dbname,
+});
+
+let clientParse: PoolClient;
+let clientCompletion: PoolClient;
+
+
+(async () => {
+  try {
+	// console.log(pool)
+    clientParse = await (await pool()).connect();
+	clientCompletion = await (await pool()).connect();
+  } catch (err) {
+    console.error('Failed to connect to Postgres', err);
+    process.exit(1);
+  }
+})();
 
 connection.languages.semanticTokens.on(async (params) => {
 	const builder = new SemanticTokensBuilder();
 	const doc = documents.get(params.textDocument.uri)!;
-	const ast = await pg_lens.parse(clientParse, doc.getText(),"",true,"")
+	const ast = await pg_lens.parse(clientParse, doc.getText(),"",true,"", params.textDocument.uri)
 
 	let highlights = await pg_lens._flatHighlights(ast, doc)
 	
@@ -258,7 +245,7 @@ async function validateTextDocument(params: DocumentDiagnosticParams, textDocume
 
 	const diagnostics: Diagnostic[] = [];
 	
-	const tree = await pg_lens.parse(clientParse, textDocument.getText(),"",true,"")
+	const tree = await pg_lens.parse(clientParse, textDocument.getText(),"",true,"", params.textDocument.uri)
 	// console.log(tree)
 	const diagHits = await pg_lens._flatDiagnostics(tree)
 
@@ -303,24 +290,24 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 	}
 
 	const completions: CompletionItem[] = [];
-
+	let flatstmts;
+	
 	if (found) { // more than one statement, so use current
-		const flatstmts = await pg_lens.parse(clientParse, doc.getText().substring(i+2,doc.offsetAt(params.position)),"",true,"")
-
-		const avail_completions = await pg_lens._createCompletions(flatstmts, clientCompletion)
-		
-		for (let i = 0; i < avail_completions.length; i++) {
-			completions.push({
-				detail: avail_completions[i].detail,
-				insertText: avail_completions[i].insertText,
-				label: avail_completions[i].label,
-				kind: CompletionItemKind.Text
-			})
-		}
+		flatstmts = await pg_lens.parse(clientParse, doc.getText().substring(i+2,doc.offsetAt(params.position)),"",true,"", params.textDocument.uri)
 	}
-	else { // treat entire doc like the first statement
-		// console.log(`${0} => ${doc.offsetAt(params.position)}`)
-		// console.log(txt.substring(0,doc.offsetAt(params.position)))
+	else {
+		flatstmts = await pg_lens.parse(clientParse,doc.getText(),"",true,"",params.textDocument.uri)
+	}
+
+	const avail_completions = await pg_lens._createCompletions(flatstmts, clientCompletion)
+		
+	for (let i = 0; i < avail_completions.length; i++) {
+		completions.push({
+			detail: avail_completions[i].detail,
+			insertText: avail_completions[i].insertText,
+			label: avail_completions[i].label,
+			kind: CompletionItemKind.Text
+		})
 	}
 
 	return completions;
@@ -342,10 +329,10 @@ documents.onDidChangeContent(async (params) => {
 	if (clientParse !== undefined) {
 		try {
 			const doc = params.document.getText()
-			let f: any = await pg_lens.parse(clientParse, doc,"",true,"db")
+			let f: any = await pg_lens.parse(clientParse, doc,"",true,"db", params.document.uri)
 			try {
-				console.log('Writing to:', path.resolve('./test.json'));
-				fs.writeFileSync(`${process.cwd()}/test.json`, JSON.stringify(f, null, 2));
+				// console.log('Writing to:', path.resolve('./test.json'));
+				// fs.writeFileSync(`${process.cwd()}/test.json`, JSON.stringify(f, null, 2));
 			} catch (err) {
 				console.error('Failed to write file:', err);
 			}

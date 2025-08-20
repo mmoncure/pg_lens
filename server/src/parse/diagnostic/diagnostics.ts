@@ -18,7 +18,7 @@ export async function _flatDiagnostics(root: types.flattenedStmts): Promise<type
 	if (!root) hits;
 
 	const errors = await (_flattenedSearchMultiTarget(root, "ERROR", "", 'parsed'))
-	console.log(errors)
+	// console.log(errors)
 	for (var i = 0; i < errors.length; i++) {
 		const fancystart = (errors[i].data.coords.split("-"))[0].split(":")
 		const fancyend = (errors[i].data.coords.split("-"))[1].split(":")

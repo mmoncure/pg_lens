@@ -79,7 +79,7 @@ export async function _createCompletions(flatstmts: types.flattenedStmts, client
 
 		rows = [...rows, ...(await clientCompletion.query(tableQuery, tableParams)).rows, ...fRows]
 
-		console.log(rows)
+		// console.log(rows)
 
 		await clientCompletion.query('COMMIT');
 		

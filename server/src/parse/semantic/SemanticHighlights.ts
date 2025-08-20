@@ -3,12 +3,6 @@ import { TextDocument, Position } from 'vscode-languageserver-textdocument'; // 
 import * as ParserTS from 'tree-sitter'
 import * as SQL from '@maximjov/tree-sitter-sql'
 
-export const tokenTypes = [
-	'namespace', 'type', 'class', 'enum', 'interface', 'struct', 'typeParameter',
-	'parameter', 'variable', 'keyword', 'enumMember', 'event', 'function', 'method',
-	'macro', 'label', 'comment', 'literalStr', 'identifier', 'literalNum', 'regexp', 'operator'
-] as const; // Most of the color types, this is a copy of the original list from server.ts, but with changes to specific ones to make it easier to read in use, index matters, the word does not.
-
 export async function _flatHighlights(data: types.flattenedStmts, doc: TextDocument): Promise<types.highlightReturn> {
 
 	const ret: types.highlightReturn = [];
@@ -27,21 +21,32 @@ export async function _flatHighlights(data: types.flattenedStmts, doc: TextDocum
 			const length = doc.offsetAt(end) - doc.offsetAt(start)
 			let type = 0;
 
-			if (n.parsed.includes('keyword')) {
-				type = tokenTypes.indexOf("keyword")
+			for (let i = 0; i < types.DATATYPE_KEYWORDS.length; i++) {
+				if (n.parsed.includes(types.DATATYPE_KEYWORDS[i])) {
+					// console.log(n.parsed)
+					type = types.tokenTypes.indexOf("type")
+					// console.log(type)
+					break;
+				}
+			}
+			if (type !== 0) {
+				// do nothing, im not sure how to properly do this lol
+			}
+			else if (n.parsed.includes('keyword')) {
+				type = types.tokenTypes.indexOf("keyword")
 			}
 			else if (n.parsed.includes('identifier')) {
-				type = tokenTypes.indexOf("identifier")
+				type = types.tokenTypes.indexOf("identifier")
 			}
 			else if (n.parsed.includes('literal')) {
 				if (isNaN(parseInt(n.id)) && isNaN(parseFloat(n.id))) {
-					type = tokenTypes.indexOf("literalStr")
+					type = types.tokenTypes.indexOf("literalStr")
 				}
-				else type = tokenTypes.indexOf("literalNum")
+				else type = types.tokenTypes.indexOf("literalNum")
 			}
 			else if (n.parsed.includes('comment') || n.parsed.includes("marginalia")) {
 				// console.log("start: ", start, "\nend: ", end)
-				type = tokenTypes.indexOf('comment')
+				type = types.tokenTypes.indexOf('comment')
 			}
 			/*
 				stl: start.line,
@@ -81,5 +86,6 @@ export async function _flatHighlights(data: types.flattenedStmts, doc: TextDocum
 
 		}
 	}
+	// console.warn(ret)
 	return ret
 }
