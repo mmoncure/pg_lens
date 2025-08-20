@@ -1,0 +1,4 @@
+- Home
+  - [Intro](README.md)
+- Guide
+  - [Getting started](guide.md)
