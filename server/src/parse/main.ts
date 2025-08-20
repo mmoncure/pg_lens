@@ -9,11 +9,8 @@ export { _flatDiagnostics } from './diagnostic/diagnostics'
 export { _createCompletions } from './completion/completion'
 
 
-import { Client, PoolClient } from 'pg'
+import { PoolClient } from 'pg'
 import * as dotenv from 'dotenv'
-import yargs, { boolean } from 'yargs'
-import * as fs from 'fs'
-import * as path from 'path'
 
 import * as types from './types'
 import * as ParserTS from 'tree-sitter'
@@ -38,133 +35,26 @@ const functionInsertText = `
 	INSERT INTO "function_args" (function_name, argument_name, argument_type, argument_default, stmt, start_position, end_position, path_file)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;	
 
-try {
-	argv = yargs(process.argv.slice(2)).options({
-		i: { type: 'string', demandOption: true },
-		o: { type: 'string' },
-		rw: { type: 'string', choices: ['db', 'stdout'], demandOption: true },
-		d: { type: 'boolean', default: false }
-	}).parseSync()
-}
-catch (e) {
-	argv = {
-		d: false
-	}
-}
-
-// async function sneakySplit(doc: string) {
-//   let ret: any[] = []
-//   const pattern = /[^\n]/g
-
-//   if (doc.length > 30000) {
-//     for (let i = 0; i < doc.length; i += 30000) {
-//       const hasNextChunk = doc.length - i >= 30000
-
-//       if (i === 0) {
-//         const pre = doc.substring(0, 30000)
-//         const end = doc.substring(30000).replace(pattern, "")
-//         ret.push(parser.parse(pre + end))
-//       } else {
-//         const pre = doc.substring(0, i).replace(pattern, "")
-//         const mid = doc.substring(i, hasNextChunk ? i + 30000 : doc.length)
-//         const end = doc.substring(hasNextChunk ? i + 30000 : doc.length).replace(pattern, "")
-//         ret.push(parser.parse(pre + mid + end))
-//       }
-//     }
-//   } else {
-//     console.warn("doc len ok!")
-//     return parser.parse(doc)
-//   }
-
-//   const base: any = ret[0] ?? {}
-
-//   if (!base.language) base.language = {}
-//   if (!Array.isArray(base.language.nodeTypeInfo)) base.language.nodeTypeInfo = []
-
-//   for (let i = 1; i < ret.length; i++) {
-//     const lang = (ret[i] as any)?.language
-//     if (lang && Array.isArray(lang.nodeTypeInfo)) {
-//       const dst = base.language.nodeTypeInfo
-//       const src = lang.nodeTypeInfo
-//       const snap = src === dst ? src.slice() : src // preserve your original behavior
-//       for (let j = 0; j < snap.length; j++) dst.push(snap[j])
-//     }
-//   }
-
-//   try {
-//     const out = { language: { nodeTypeInfo: base.language.nodeTypeInfo } }
-//     const outPath = path.resolve(process.cwd(), "help.json")
-// 	console.log(outPath)
-//     fs.writeFileSync(outPath, JSON.stringify(out, null, 2))
-//   } catch {}
-
-//   return base
-// }
-
-function splitFrame(ret: any, base: any) {
-	for (let i = 1; i < ret.length; i++) {
-		console.log(i)
-		if ((ret[i] as any)?.language?.nodeTypeInfo) {
-			base.language.nodeTypeInfo.push(...(ret[i] as any).language.nodeTypeInfo);
-		}
-	}
-	return base
-}
-
-async function sneakySplit(doc: string) {
-	let ret = []
-	const pattern = /[^\n]/g
-	if (doc.length > 4500) {
-		for (var i = 0; i < doc.length; i+=4500) {
-			console.log(i, "... testing")
-			if (i === 0){
-				let pre = doc.substring(0,4500)
-				let end = doc.substring(4500).replace(pattern, "");
-				ret.push(parser.parse(`${pre}${end}`))
-			}
-			else {
-				let pre = doc.substring(0,i).replace(pattern,"")
-				let mid = doc.substring(i,(doc.length-i >= 4500) ? i+4500 : doc.length)
-				let end = doc.substring((doc.length-i >= 4500) ? i+4500 : doc.length ).replace(pattern, "")
-				ret.push(parser.parse(`${pre}${mid}${end}`))
-			}
-		}
-	}
-	else {
-		console.warn('doc len ok!')
-		return (parser.parse(doc))
-	}
-
-	let base: any = ret[0];
-
-	base = splitFrame(ret, base)
-	// console.log('Writing to:', path.resolve('./help.json'));
-	// fs.writeFileSync(`${process.cwd()}/help.json`, JSON.stringify(base, null, 2));
-
-	return base;
-}
-
 dotenv.config({ path: "/Users/maxim.jovanovic/Desktop/testlsp/.env" });
 
-export async function parse(client: PoolClient, doc: string, outPath: string | undefined, debug: boolean, outType: string, file_path: string) {
+/**
+ * Parses the given SQL document, flattens its syntax tree, and optionally inserts table and function metadata into the database.
+ *
+ * @param client - PostgreSQL PoolClient for DB operations.
+ * @param doc - SQL document string to parse.
+ * @param file_path - Path of the file being parsed.
+ * @param outType - If true, performs database operations; otherwise, only parses the document.
+ * @returns Flattened array of parsed statements.
+ */
+export async function parse(client: PoolClient, doc: string, outType: boolean, file_path: string) {
 
 	let munchedSQL: types.flattenedStmts = []
 
-
-	// parse all SQL with tree-sitter
-	// sneakySplit(doc)
-	// let tree;
-	// try {
-	// 	tree = (await sneakySplit(doc) as ParserTS.Tree);
-	// }
-	// catch (e) {
-	// 	console.error(e)
-	// }
 	const tree = parser.parse(doc, undefined, options)
 	await dfsFlatten(tree!.rootNode, "", munchedSQL);
 	// console.log(munchedSQL.length)
 
-	if (outType === "db") {
+	if (outType === true) {
 
 		try {
 			// add DDL to db (CREATE TABLE for now)
@@ -202,6 +92,13 @@ export async function parse(client: PoolClient, doc: string, outPath: string | u
 
 // Basically same functions-- rewritten to use an array instead of trees
 
+/**
+ * Recursively traverses a Tree-sitter syntax node and flattens it into an array of statement objects.
+ *
+ * @param node - The Tree-sitter syntax node to traverse.
+ * @param _path - Current path string for node hierarchy.
+ * @param ret - Array to collect flattened statement objects.
+ */
 export async function dfsFlatten(node: ParserTS.SyntaxNode, _path: string, ret: types.flattenedStmts): Promise<void> {
 	if (!node) return;
 	const { startPosition, endPosition, type } = node;
@@ -229,6 +126,13 @@ export async function dfsFlatten(node: ParserTS.SyntaxNode, _path: string, ret: 
   	}
 }
 
+/**
+ * Collects nodes from a flattened statement array that match the given type.
+ *
+ * @param nodes - Array of flattened statement objects.
+ * @param match - Node type to match.
+ * @returns Array of matching nodes.
+ */
 async function _collectNodes(nodes: types.flattenedStmts, match: string) {
 	let results: any[] = []
 	nodes.forEach(node => {
@@ -237,6 +141,14 @@ async function _collectNodes(nodes: types.flattenedStmts, match: string) {
 	return results
 }
 
+
+/**
+ * Inserts table column metadata into the database from flattened statement nodes.
+ *
+ * @param client - PostgreSQL PoolClient for DB operations.
+ * @param nodes - Array of flattened statement objects.
+ * @param file_path - Path of the file being parsed.
+ */
 async function _insertTableColumns(client: PoolClient, nodes: types.flattenedStmts, file_path: string) {
 
 		const columns = await _collectNodes(nodes, "column_definition")
@@ -326,6 +238,13 @@ async function _insertTableColumns(client: PoolClient, nodes: types.flattenedStm
 		}
 }
 
+/**
+ * Inserts function argument metadata into the database from flattened statement nodes.
+ *
+ * @param client - PostgreSQL PoolClient for DB operations.
+ * @param nodes - Array of flattened statement objects.
+ * @param file_path - Path of the file being parsed.
+ */
 async function _insertFunctionColumns(client: PoolClient, nodes: types.flattenedStmts, file_path: string) {
 
 		const args = await _collectNodes(nodes, "function_argument")

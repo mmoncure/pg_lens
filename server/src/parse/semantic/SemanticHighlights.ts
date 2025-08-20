@@ -1,7 +1,5 @@
 import * as types from '../types'
 import { TextDocument, Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
-import * as ParserTS from 'tree-sitter'
-import * as SQL from '@maximjov/tree-sitter-sql'
 
 export async function _flatHighlights(data: types.flattenedStmts, doc: TextDocument): Promise<types.highlightReturn> {
 

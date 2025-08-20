@@ -1,12 +1,16 @@
 import * as types from '../types'
-import { Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
 import { _flattenedSearchMultiTarget, _flattenedSearchSingleTarget } from '../util/search'
-import * as ParserTS from 'tree-sitter'
-import * as SQL from '@maximjov/tree-sitter-sql'
-import { Pool, PoolClient } from 'pg';
-import { freemem } from 'os';
-import { check } from 'yargs';
+import { PoolClient } from 'pg';
 
+
+/**
+ * 
+ * Creates completions based on the flattened statements and the current context.
+ * 
+ * @param flatstmts - Flattened statements to search through.
+ * @param clientCompletion - The database client used for querying completions.
+ * @returns A promise that resolves to an array of completion items.
+ */
 export async function _createCompletions(flatstmts: types.flattenedStmts, clientCompletion: PoolClient): Promise<types.completionReturn> {
 	
 	var retval: types.completionReturn = []

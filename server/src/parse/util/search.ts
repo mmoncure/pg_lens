@@ -1,7 +1,15 @@
 import * as types from '../types'
-import * as ParserTS from 'tree-sitter'
-import * as SQL from '@maximjov/tree-sitter-sql'
 
+/**
+ * 
+ * Searches through flattened statements for a specific target node.
+ * 
+ * @param data - Flattened statements to search through.
+ * @param targetParsed - The parsed type of the target node to find.
+ * @param targetId - The ID of the target node to find.
+ * @param findId - If true, searches for the parsed type; if false, searches for the ID.
+ * @returns A promise that resolves to a search return object containing the found data and its path.
+ */
 export async function _flattenedSearchSingleTarget(data: types.flattenedStmts, targetParsed: string, targetId: String, findId: boolean = false): Promise<types.searchReturn> {
 	// console.log(targetParsed, " ", targetId, " ",  findId)
 	// console.log (data)

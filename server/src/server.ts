@@ -12,16 +12,12 @@ import {
 	DidChangeConfigurationNotification,
 	CompletionItem,
 	CompletionItemKind,
-	CompletionTriggerKind,
 	TextDocumentSyncKind,
 	InitializeResult,
 	DocumentDiagnosticReportKind,
 	type DocumentDiagnosticReport,
 	CompletionParams,
-	TextDocumentPositionParams,
 	DocumentDiagnosticParams,
-	DidChangeTextDocumentNotification,
-	DidChangeTextDocumentParams,
 	SemanticTokensBuilder,
 	_Connection
 } from 'vscode-languageserver/node';
@@ -35,11 +31,8 @@ import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 
-import * as parser from 'libpg-query'
-
 import * as types from './parse/types'
 import * as pg_lens from './parse/main'
-import { completion } from 'yargs';
 
 
 // Create a connection for the server, using Node's IPC as a transport.
@@ -129,9 +122,6 @@ connection.onDidChangeConfiguration(change => {
 			(change.settings.pgLens || defaultSettings)
 		);
 	}
-	// Refresh the diagnostics since the `maxNumberOfProblems` could have changed.
-	// We could optimize things here and re-fetch the setting first can compare it
-	// to the existing setting, but this is out of scope for this example.
 	connection.languages.diagnostics.refresh();
 });
 
@@ -157,6 +147,13 @@ documents.onDidClose(e => {
 });
 
 
+/**
+ * 
+ * Gets the PostgreSQL connection data from the document settings.
+ * 
+ * @param scopeUri - The URI of the document to get settings for.
+ * @returns A promise that resolves to an object containing PostgreSQL connection data.
+ */
 async function getPgData(scopeUri?: string) {
   const cfg = await getDocumentSettings(scopeUri || "")
   return {
@@ -195,7 +192,7 @@ let clientCompletion: PoolClient;
 connection.languages.semanticTokens.on(async (params) => {
 	const builder = new SemanticTokensBuilder();
 	const doc = documents.get(params.textDocument.uri)!;
-	const ast = await pg_lens.parse(clientParse, doc.getText(),"",true,"", params.textDocument.uri)
+	const ast = await pg_lens.parse(clientParse, doc.getText(),true, params.textDocument.uri)
 
 	let highlights = await pg_lens._flatHighlights(ast, doc)
 	
@@ -224,28 +221,18 @@ connection.languages.diagnostics.on(async (params) => {
 	}
 });
 
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
-// documents.onDidChangeContent(change => {
-// 	validateTextDocument(change.document);
-// });
-
-// async function contextTree(params: DocumentDiagnosticParams): Promise<types.stmtTreeSit> {
-// 	const doc = documents.get(params.textDocument.uri)?.getText()
-// 	const { line, character } = params.;
-// 	let found = false
-// 	let i = doc.offsetAt(textDocument.position)
-// 	for (i; i > 0 && found === false; i--) {
-// 		if (txt[i] === ';') found = true;
-// 		// console.log(`${txt[i]} == ; @ ${i}`)
-// 	}
-// }
-
+/**
+ * Validates a text document and returns diagnostics.
+ * 
+ * @param params - The parameters for the document diagnostic request.
+ * @param textDocument - The text document to validate.
+ * @returns A promise that resolves to an array of diagnostics.
+ */
 async function validateTextDocument(params: DocumentDiagnosticParams, textDocument: TextDocument): Promise<Diagnostic[]> {
 
 	const diagnostics: Diagnostic[] = [];
 	
-	const tree = await pg_lens.parse(clientParse, textDocument.getText(),"",true,"", params.textDocument.uri)
+	const tree = await pg_lens.parse(clientParse, textDocument.getText(),true, params.textDocument.uri)
 	// console.log(tree)
 	const diagHits = await pg_lens._flatDiagnostics(tree)
 
@@ -277,7 +264,9 @@ connection.onDidChangeWatchedFiles(_change => {
 
 
 
-
+/**
+ * Handles completion requests and returns completion items based on the current context.
+ */
 connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem[]> => {
 	const doc = documents.get(params.textDocument.uri);
 	if (!doc) return [];
@@ -293,10 +282,10 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 	let flatstmts;
 	
 	if (found) { // more than one statement, so use current
-		flatstmts = await pg_lens.parse(clientParse, doc.getText().substring(i+2,doc.offsetAt(params.position)),"",true,"", params.textDocument.uri)
+		flatstmts = await pg_lens.parse(clientParse, doc.getText().substring(i+2,doc.offsetAt(params.position)),true,params.textDocument.uri)
 	}
 	else {
-		flatstmts = await pg_lens.parse(clientParse,doc.getText(),"",true,"",params.textDocument.uri)
+		flatstmts = await pg_lens.parse(clientParse,doc.getText(),true,params.textDocument.uri)
 	}
 
 	const avail_completions = await pg_lens._createCompletions(flatstmts, clientCompletion)
@@ -325,17 +314,20 @@ connection.onCompletionResolve(
 	}
 );
 
+/**
+ * Handles text document changes and re-parses the document.
+ */
 documents.onDidChangeContent(async (params) => {
 	if (clientParse !== undefined) {
 		try {
 			const doc = params.document.getText()
-			let f: any = await pg_lens.parse(clientParse, doc,"",true,"db", params.document.uri)
-			try {
-				// console.log('Writing to:', path.resolve('./test.json'));
-				// fs.writeFileSync(`${process.cwd()}/test.json`, JSON.stringify(f, null, 2));
-			} catch (err) {
-				console.error('Failed to write file:', err);
-			}
+			let f: any = await pg_lens.parse(clientParse, doc,true, params.document.uri)
+			// try {
+			// 	console.log('Writing to:', path.resolve('./test.json'));
+			// 	fs.writeFileSync(`${process.cwd()}/test.json`, JSON.stringify(f, null, 2));
+			// } catch (err) {
+			// 	console.error('Failed to write file:', err);
+			// }
 			// console.log(f)
 		} 
 		catch (e) {

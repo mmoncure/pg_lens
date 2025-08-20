@@ -1,8 +1,6 @@
 import * as types from '../types'
 import { Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
 import { _flattenedSearchMultiTarget } from '../util/search'
-import * as ParserTS from 'tree-sitter'
-import * as SQL from '@maximjov/tree-sitter-sql'
  
 const DiagnosticSeverity = {
 	Error: 1,

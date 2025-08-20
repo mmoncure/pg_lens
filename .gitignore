@@ -2,6 +2,7 @@
 
 .vsix
 /server/out
+test.json
 
 # Dependency directories
 
