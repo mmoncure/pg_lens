@@ -23,7 +23,7 @@ export async function _flatDiagnostics(root: types.flattenedStmts): Promise<type
 	const hits: types.diagnosticReturn = []
 
 	if (!root) hits;
-	logger.log("Searching for errors in flattened statements...")
+	// logger.log("Searching for errors in flattened statements...")
 	const errors = await (_flattenedSearchMultiTarget(root, "ERROR", "", 'parsed'))
 	// console.log(errors)
 	for (var i = 0; i < errors.length; i++) {
