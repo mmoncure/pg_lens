@@ -1,27 +1,9 @@
-# Sample usage
-```pg_lens % pglens -i ./in/sampleComplex.sql -o temp.json --rw db -d true```
+# PG Lens
 
-# Install
-- sudo npm i -g
+An unpolished and unfinished pgsql LSP built with Treesitter and pgsql grammar forked from @DerekStride. You can find and contribute to that [here](https://github.com/maximjov/tree-sitter-sql).
+## Why?
 
-# Usage
-```
-npm run build
-```
-```
-Options:
-      --help     Show help                                             [boolean]
-      --version  Show version number                                   [boolean]
-  -i                                                         [string] [required]
-  -o                                                                    [string]
-      --rw                         [string] [required] [choices: "db", "stdout"]
-  -d                                                  [boolean] [default: false]
-```
+because @mmoncure wanted me to; some fancy mission statement probably belongs around here.
 
-# Dependencies
-- "dotenv": "^16.5.0",
-- "libpg-query": "^17.1.1",
-- "pg": "^8.16.0",
-- "typescript": "^5.8.3",
-- "util": "^0.12.5",
-- "yargs": "^18.0.0"
+isnt this kinda cool though?\
+![Demo video](demo.gif)
