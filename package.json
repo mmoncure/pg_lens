@@ -8,6 +8,8 @@
 		"type": "git",
 		"url": "https://github.com/mmoncure/pg_lens/blob/lsp-in"
 	},
+	"publisher": "maximjov && mmoncure",
+	"displayName": "PG Lens",
 	"categories": [],
 	"engines": {
 		"vscode": "^1.75.0"
