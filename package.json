@@ -17,10 +17,15 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
-		"configuration":[
+		"configuration": [
 			{
 				"title": "PG Lens",
 				"properties": {
+					"pgLens.logging": {
+						"type": "boolean",
+						"default": "true",
+						"description": "enables console logging"
+					},
 					"pgLens.pguser": {
 						"type": "string",
 						"default": "postgres",
@@ -40,8 +45,8 @@
 						"type": "string",
 						"default": "5432",
 						"description": "pg port"
-					}
-					,"pgLens.dbname": {
+					},
+					"pgLens.dbname": {
 						"type": "string",
 						"default": "postgres",
 						"description": "db name"
@@ -55,17 +60,21 @@
 					"comment": "#636363",
 					"type": "#d16969",
 					"keyword": "#c586c0",
-					"identifier":"#9cdcfe",
-					"literalStr":"#ce9178",
-					"literalNum":"#b5cea8"
+					"identifier": "#9cdcfe",
+					"literalStr": "#ce9178",
+					"literalNum": "#b5cea8"
 				}
 			}
 		},
-		  "languages": [
+		"languages": [
 			{
 				"id": "sql",
-				"aliases": ["SQL"],
-				"extensions": [".sql"],
+				"aliases": [
+					"SQL"
+				],
+				"extensions": [
+					".sql"
+				],
 				"configuration": "./language-configuration.json"
 			}
 		],
@@ -95,6 +104,7 @@
 		"@maximjov/tree-sitter-sql": "^0.4.0",
 		"dotenv": "^17.1.0",
 		"pg": "^8.16.3",
-		"tree-sitter": "^0.21.1"
+		"tree-sitter": "^0.21.1",
+		"ts-node": "^10.9.2"
 	}
 }

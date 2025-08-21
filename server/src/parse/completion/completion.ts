@@ -1,4 +1,5 @@
 import * as types from '../types'
+import logger from '../util/log';
 import { _flattenedSearchMultiTarget, _flattenedSearchSingleTarget } from '../util/search'
 import { Client } from 'pg';
 
@@ -12,9 +13,10 @@ import { Client } from 'pg';
  * @returns A promise that resolves to an array of completion items.
  */
 export async function _createCompletions(flatstmts: types.flattenedStmts, clientCompletion: Client): Promise<types.completionReturn> {
-	
+	logger.log("Creating completions...")
 	var retval: types.completionReturn = []
 
+	
 	const table_ex = (await (_flattenedSearchSingleTarget(flatstmts,"relation","",true))).data // maybe, might need changing (object_reference also contains important data)
 	const obj_ref = (await (_flattenedSearchSingleTarget(flatstmts,"object_reference","",true))).data
 
@@ -54,6 +56,7 @@ export async function _createCompletions(flatstmts: types.flattenedStmts, client
 	let functionParams: any[] = []
 	let key = 'column_name';
 	try {
+		logger.log("Querying database for completions...")
 		await clientCompletion.query('BEGIN');
 
 		if (check_se && check_et) {
@@ -74,6 +77,7 @@ export async function _createCompletions(flatstmts: types.flattenedStmts, client
 			functionParams = [obj_ref]
 		}
 		
+		logger.log(`Function query: ${functionQuery} with params ${functionParams}`);
 		let fRows = (await clientCompletion.query(functionQuery, functionParams)).rows.filter((x: any) => {
 			for (let i = 0; i < check_ea.length; i++) {
 				if (check_ea[i].data.id === Object.values(x)[0]) return false
@@ -89,7 +93,9 @@ export async function _createCompletions(flatstmts: types.flattenedStmts, client
 		
 	}
 	catch (e) {
-		console.error(e)
+		await clientCompletion.query('ROLLBACK');
+		logger.log('Error querying database for completions: ' + e);
+		return retval;
 	}
 	for (let i = 0; i < rows.length; i++) {
 		retval.push({
@@ -99,5 +105,6 @@ export async function _createCompletions(flatstmts: types.flattenedStmts, client
 		});
 	};
 
+	logger.log(`Completions created: ${JSON.stringify(retval)}`);
 	return retval;
 }

@@ -13,9 +13,11 @@ export { _initpgtables } from './util/init'
 import { Client } from 'pg'
 import * as dotenv from 'dotenv'
 
+import logger from './util/log';
 import * as types from './types'
 import * as ParserTS from 'tree-sitter'
 import * as SQL from '@maximjov/tree-sitter-sql'
+import { log } from 'console'
 
 const parser = new ParserTS();
 
@@ -48,16 +50,16 @@ dotenv.config({ path: "/Users/maxim.jovanovic/Desktop/testlsp/.env" });
  * @returns Flattened array of parsed statements.
  */
 export async function parse(client: Client, doc: string, outType: boolean, file_path: string) {
-
+	logger.log("Parsing document...");
 	let munchedSQL: types.flattenedStmts = []
 
 	const tree = parser.parse(doc, undefined, options)
+	logger.log("Document parsed into syntax tree.");
 	await dfsFlatten(tree!.rootNode, "", munchedSQL);
 	// console.log(munchedSQL.length)
 
 	if (outType === true) {
 
-		try {
 			// add DDL to db (CREATE TABLE for now)
 			try {
 				await client.query('BEGIN')
@@ -67,7 +69,7 @@ export async function parse(client: Client, doc: string, outType: boolean, file_
 			}
 			catch(e) {
 				await client.query('ROLLBACK')
-				console.error(e)
+				logger.log(e)
 			}
 			try {
 				await client.query('BEGIN')
@@ -77,14 +79,10 @@ export async function parse(client: Client, doc: string, outType: boolean, file_
 			}
 			catch(e) {
 				await client.query('ROLLBACK')
-				console.error(e)
+				logger.log(e)
 			}
 
 			// await client.release() // Don't release, we want to use the same clients
-		}
-		catch (e) {
-			await client.query('ROLLBACK')
-		}
 	}
 	return munchedSQL
 }
@@ -101,6 +99,7 @@ export async function parse(client: Client, doc: string, outType: boolean, file_
  * @param ret - Array to collect flattened statement objects.
  */
 export async function dfsFlatten(node: ParserTS.SyntaxNode, _path: string, ret: types.flattenedStmts): Promise<void> {
+	// logger.log(`Traversing node: ${node.type} at path: ${_path}`);
 	if (!node) return;
 	const { startPosition, endPosition, type } = node;
 	const coord = `${startPosition.row}:${startPosition.column} - ${endPosition.row}:${endPosition.column}`;
@@ -135,6 +134,7 @@ export async function dfsFlatten(node: ParserTS.SyntaxNode, _path: string, ret: 
  * @returns Array of matching nodes.
  */
 async function _collectNodes(nodes: types.flattenedStmts, match: string) {
+	logger.log(`Collecting nodes of type: ${match}`);
 	let results: any[] = []
 	nodes.forEach(node => {
 		if (node.parsed === match) results.push(node)
@@ -151,7 +151,7 @@ async function _collectNodes(nodes: types.flattenedStmts, match: string) {
  * @param file_path - Path of the file being parsed.
  */
 async function _insertTableColumns(client: Client, nodes: types.flattenedStmts, file_path: string) {
-
+		logger.log("Inserting table columns into database...");
 		const columns = await _collectNodes(nodes, "column_definition")
 		if (!columns) return;
 		const idents = await _collectNodes(nodes, "identifier")
@@ -191,13 +191,14 @@ async function _insertTableColumns(client: Client, nodes: types.flattenedStmts, 
 			}
 
 			// god bless the order
-
+			logger.log(`Processing column: ${col.id} for table: ${relation}`);
 			const idsIdx =  nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(col.path) && n.
 			parsed === ("identifier"))
 			const ids = nodes[idsIdx]
 
 			if (ids === undefined || ids.parsed === undefined) {
-				console.error('No children: ', col);
+				// console.error('No children: ', col);
+				logger.log(`No identifier child found for column definition: ${col}`);
 				return
 			}
 
@@ -223,18 +224,18 @@ async function _insertTableColumns(client: Client, nodes: types.flattenedStmts, 
 			const absoluteDefault = hasDefault >= 0 ? nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(col.path) && n.parsed.toLowerCase().includes('default') ) : -1
 
 			const colDefault = hasDefault >= 0 && absoluteDefault >= 0 ? nodes[absoluteDefault + 1].id : null;
-
+			logger.log('Done generating column metadata, inserting into database...');
 			try {
 				/*
 					INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
 					VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
 				*/
 				let g = await client.query(tableInsertText, ["public", relation, colName, typeNode.id, hasNotNull, colDefault, col.id, startpos, endpos, file_path]);
-				// console.log(g)
+				logger.log(`Inserted column ${colName} for table ${relation}: ${JSON.stringify(g)}`);
 			}
 			catch (e: any) {
 				// console.log("Probably an SQL error, but logged nonetheless")
-				throw e
+				logger.log(`Error inserting column ${colName} for table ${relation}: ${e}`);
 			}
 		}
 }
@@ -247,7 +248,7 @@ async function _insertTableColumns(client: Client, nodes: types.flattenedStmts, 
  * @param file_path - Path of the file being parsed.
  */
 async function _insertFunctionColumns(client: Client, nodes: types.flattenedStmts, file_path: string) {
-
+	logger.log("Inserting function arguments into database...");
 		const args = await _collectNodes(nodes, "function_argument")
 		if (!args) return;
 		const idents = await _collectNodes(nodes, "identifier")
@@ -286,13 +287,14 @@ async function _insertFunctionColumns(client: Client, nodes: types.flattenedStmt
 			}
 
 			// god bless the order
-
+			logger.log(`Processing argument: ${arg.id} for function: ${relation}`);
 			const idsIdx =  nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(arg.path) && n.
 			parsed === ("identifier"))
 			const ids = nodes[idsIdx]
 
 			if (ids === undefined || ids.parsed === undefined) {
-				console.error('No children: ', arg);
+				// console.error('No children: ', arg);
+				logger.log(`No identifier child found for function argument: ${arg}`);
 				return
 			}
 
@@ -310,7 +312,8 @@ async function _insertFunctionColumns(client: Client, nodes: types.flattenedStmt
 			if (!datatypes.includes(typeNode.id.toLowerCase())) {
 				if (typeNode.id.toLowerCase().includes(typeNode.parsed)) typeNode = nodes[idsIdx + 2]
 				else {
-					console.log("can't find datatype", typeNode.id)
+					// console.log("can't find datatype", typeNode.id)
+					logger.log(`Can't find datatype for argument ${argName} in function ${relation}, skipping...`);
 					return
 				}
 			}
@@ -320,18 +323,18 @@ async function _insertFunctionColumns(client: Client, nodes: types.flattenedStmt
 			const absoluteDefault = hasDefault >= 0 ? nodes.findIndex((n: types.stmtFlatTreeSit) => n.path.includes(arg.path) && n.parsed.toLowerCase().includes('default') ) : -1
 
 			const colDefault = hasDefault >= 0 && absoluteDefault >= 0 ? nodes[absoluteDefault + 1].id : null;
-
+			logger.log('Done generating argument metadata, inserting into database...');
 			try {
 				/*
 					INSERT INTO "function_args" (function_name, argument_name, argument_type, argument_default, stmt, start_position, end_position)
 					VALUES ($1, $2, $3, $4, $5, $6, $7);`
 				*/
 				const g = (await client.query(functionInsertText, [relation, argName, typeNode.id, colDefault, arg.id, startpos, endpos, file_path]))
-				// console.log(g)
+				logger.log(`Inserted argument ${argName} for function ${relation}: ${JSON.stringify(g)}`);
 			}
 			catch (e: any) {
 				// console.error("Probably an SQL error, but logged nonetheless\n\n", e)
-				throw e
+				logger.log(`Error inserting argument ${argName} for function ${relation}: ${e}`);
 			}
 		}
 }

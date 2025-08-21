@@ -22,7 +22,7 @@ import {
 	_Connection
 } from 'vscode-languageserver/node';
 
-import { Pool, PoolClient } from 'pg'
+import * as pg from 'pg'
 
 import * as path from 'path'
 import * as fs from 'fs'
@@ -34,11 +34,13 @@ import {
 import * as types from './parse/types'
 import * as pg_lens from './parse/main'
 
+import logger from './parse/util/log';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
 
+console.log('Pre-init: PG Lens Language Server is starting, connection created');
 
 // Create a simple text document manager.
 const documents = new TextDocuments(TextDocument);
@@ -50,6 +52,9 @@ let hasDiagnosticRelatedInformationCapability = false;
 export const legend = { tokenTypes: [...types.tokenTypes], tokenModifiers: [...types.tokenModifiers] };
 
 connection.onInitialize((params: InitializeParams) => {
+
+	console.log('Pre-init: Connection intialize started');
+
 	const capabilities = params.capabilities;
 
 	// Does the client support the `workspace/configuration` request?
@@ -96,28 +101,31 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onInitialized(() => {
+	console.log('Pre-init: Connection initialized');
 	if (hasConfigurationCapability) {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
-			connection.console.log('Workspace folder change event received.');
+			logger.log('Workspace folder change event received.');
 		});
 	}
 });
 
-type PgLensSettings = { pguser?: string, pgpass?: string, pghost?: string, pgport?: string, dbname?: string }
-let defaultSettings: PgLensSettings = { pguser: 'postgres', pgpass: 'admin', pghost: 'localhost', pgport: '5432', dbname: 'postgres' }
+type PgLensSettings = { pguser: string, pgpass: string, pghost: string, pgport: string, dbname: string, logging: boolean }
+let defaultSettings: PgLensSettings = { pguser: 'postgres', pgpass: 'admin', pghost: 'localhost', pgport: '5432', dbname: 'postgres', logging: true };
 
 const documentSettings = new Map<string, Thenable<PgLensSettings>>()
 
 
 connection.onDidChangeConfiguration(change => {
+	console.log('\nInit complete, LSP ready\n\n');
 	if (hasConfigurationCapability) {
 		// Reset all cached document settings
 		documentSettings.clear();
 	} else {
+		console.log(change.settings.pgLens, "change.settings.pgLens");
 		defaultSettings = (
 			(change.settings.pgLens || defaultSettings)
 		);
@@ -126,6 +134,7 @@ connection.onDidChangeConfiguration(change => {
 });
 
 function getDocumentSettings(resource: string): Thenable<PgLensSettings> {
+	console.log('Pre-init: Getting document settings');
 	if (!hasConfigurationCapability) {
 		return Promise.resolve(defaultSettings);
 	}
@@ -143,6 +152,7 @@ function getDocumentSettings(resource: string): Thenable<PgLensSettings> {
 
 // Only keep settings for open documents
 documents.onDidClose(e => {
+	console.log('Document closed:', e.document.uri);
 	documentSettings.delete(e.document.uri);
 });
 
@@ -155,41 +165,46 @@ documents.onDidClose(e => {
  * @returns A promise that resolves to an object containing PostgreSQL connection data.
  */
 async function getPgData(scopeUri?: string) {
-  const cfg = await getDocumentSettings(scopeUri || "")
-  return {
-	pguser: cfg.pguser ?? defaultSettings.pguser,
-	pgpass: cfg.pgpass ?? defaultSettings.pgpass,
-	pghost: cfg.pghost ?? defaultSettings.pghost,
-	pgport: cfg.pgport ?? defaultSettings.pgport,
-	dbname: cfg.dbname ?? defaultSettings.dbname
-  }
+	console.log('Pre-init: Getting PostgreSQL connection and logging data');
+	const cfg = await getDocumentSettings(scopeUri || "")
+	
+	return {
+		pguser: cfg.pguser ?? defaultSettings.pguser,
+		pgpass: cfg.pgpass ?? defaultSettings.pgpass,
+		pghost: cfg.pghost ?? defaultSettings.pghost,
+		pgport: cfg.pgport ?? defaultSettings.pgport,
+		dbname: cfg.dbname ?? defaultSettings.dbname,
+		logging: cfg.logging ?? defaultSettings.logging
+	}
 }
 
-let pgdata: PgLensSettings;
-
-(async () => {
-	pgdata = await getPgData();
-})
-const pool = async () => new Pool({
-	user: process.env.PG_USER || pgdata.pguser,
-	password: process.env.PG_PASS || pgdata.pgpass,
-	host: process.env.PG_HOST || pgdata.pghost,
-	port: parseInt(process.env.PG_PORT || pgdata.pgport || "5432"),
-	database: process.env.DB_NAME || pgdata.dbname,
+const client = async (pgData: PgLensSettings) => new pg.Client({
+	user: process.env.PG_USER || pgData.pguser,
+	password: process.env.PG_PASS || pgData.pgpass,
+	host: process.env.PG_HOST || pgData.pghost,
+	port: parseInt(process.env.PG_PORT || pgData.pgport || "5432"),
+	database: process.env.DB_NAME || pgData.dbname,
 });
 
-let clientParse: PoolClient;
-let clientCompletion: PoolClient;
-
-
+let clientParse: pg.Client;
+let clientCompletion: pg.Client;
 (async () => {
   try {
-	// console.log(pool)
-    clientParse = await (await pool()).connect();
-	clientCompletion = await (await pool()).connect();
+	console.log('Pre-init: Establishing connection to Postgres and initializing logger');
+	const pgData = await getPgData();
+	console.log(pgData.logging, "what? ", process.env.LOGGING);
+	logger.setLog(process.env.LOGGING === 'true' ? true : process.env.LOGGING === 'false' ? false : pgData.logging);
+	clientParse = await client(pgData);
+	await clientParse.connect();
+	clientCompletion = await client(pgData);
+	await clientCompletion.connect();
+	
+	logger.log("check check");
 
 	// Initialize the database with necessary tables
 	await pg_lens._initpgtables(clientParse);
+
+	console.log('Pre-init: Postgres connection established and logger initialized');
 
   } catch (err) {
     console.error('Failed to connect to Postgres', err);
@@ -198,9 +213,10 @@ let clientCompletion: PoolClient;
 })();
 
 connection.languages.semanticTokens.on(async (params) => {
+	logger.log('Semantic token request received');
 	const builder = new SemanticTokensBuilder();
 	const doc = documents.get(params.textDocument.uri)!;
-	const ast = await pg_lens.parse(clientParse, doc.getText(),false, params.textDocument.uri)
+	const ast = await pg_lens.parse(clientParse, doc.getText(), false, params.textDocument.uri)
 
 	let highlights = await pg_lens._flatHighlights(ast, doc)
 	
@@ -208,13 +224,16 @@ connection.languages.semanticTokens.on(async (params) => {
 		builder.push(highlights[i].stl, highlights[i].stc, highlights[i].len, highlights[i].typ, highlights[i].dum);
 	}
 	let b = builder.build()
+	logger.log('Semantic token request processed, returning tokens');
 	return b
 });
 
 
 connection.languages.diagnostics.on(async (params) => {
+	logger.log('Diagnostic request received');
 	const document = documents.get(params.textDocument.uri);
 	if (document !== undefined) {
+		logger.log('Document found, validating text document for diagnostics');
 		return {
 			kind: DocumentDiagnosticReportKind.Full,
 			items: await validateTextDocument(params, document)
@@ -222,6 +241,7 @@ connection.languages.diagnostics.on(async (params) => {
 	} else {
 		// We don't know the document. We can either try to read it from disk
 		// or we don't report problems for it.
+		logger.log('Document not found, returning empty diagnostics');
 		return {
 			kind: DocumentDiagnosticReportKind.Full,
 			items: []
@@ -237,7 +257,7 @@ connection.languages.diagnostics.on(async (params) => {
  * @returns A promise that resolves to an array of diagnostics.
  */
 async function validateTextDocument(params: DocumentDiagnosticParams, textDocument: TextDocument): Promise<Diagnostic[]> {
-
+	logger.log('Validating text document for diagnostics');
 	const diagnostics: Diagnostic[] = [];
 	
 	const tree = await pg_lens.parse(clientParse, textDocument.getText(),false, params.textDocument.uri)
@@ -258,17 +278,17 @@ async function validateTextDocument(params: DocumentDiagnosticParams, textDocume
 	}
 
 	if (diagnostics === undefined) {
-		console.log('Something went wrong while generating diagnostics')
+		logger.log('No diagnostics found, returning empty array');
 		return [];
 	}
-
+	logger.log('Diagnostics found, returning diagnostics array');
 	return diagnostics;
 }
 
-connection.onDidChangeWatchedFiles(_change => {
-	// Monitored files have change in VSCode
-	connection.console.log('We received a file change event');
-});
+// connection.onDidChangeWatchedFiles(_change => {
+// 	// Monitored files have change in VSCode
+// 	connection.console.log('We received a file change event');
+// });
 
 
 
@@ -276,6 +296,7 @@ connection.onDidChangeWatchedFiles(_change => {
  * Handles completion requests and returns completion items based on the current context.
  */
 connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem[]> => {
+	logger.log('Completion request received');
 	const doc = documents.get(params.textDocument.uri);
 	if (!doc) return [];
 
@@ -297,7 +318,7 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 	}
 
 	const avail_completions = await pg_lens._createCompletions(flatstmts, clientCompletion)
-		
+
 	for (let i = 0; i < avail_completions.length; i++) {
 		completions.push({
 			detail: avail_completions[i].detail,
@@ -306,7 +327,7 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 			kind: CompletionItemKind.Text
 		})
 	}
-
+	logger.log('Completion request processed, returning completions');
 	return completions;
 
 });
@@ -315,6 +336,7 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 // the completion list.
 connection.onCompletionResolve(
 	(item: CompletionItem): CompletionItem => {
+		console.log('I dont know how we arrived here, but we did');
 		if (item.data === 1) {
 			item.detail = 'Test completion on .';
 		}
@@ -326,6 +348,7 @@ connection.onCompletionResolve(
  * Handles text document changes and re-parses the document.
  */
 documents.onDidChangeContent(async (params) => {
+	logger.log('Document content change event received, re-parsing document');
 	if (clientParse !== undefined) {
 		try {
 			const doc = params.document.getText()
@@ -339,12 +362,11 @@ documents.onDidChangeContent(async (params) => {
 			// console.log(f)
 		} 
 		catch (e) {
-			console.log("Parsing failed: ");
-			console.error(e)
+			logger.log(`Error during parse: ${e}`);
 		}
 	}
 	else {
-		console.log("waiting for db con...")
+		logger.log("Client not ready yet, waiting for db con...")
 	}
 });
 

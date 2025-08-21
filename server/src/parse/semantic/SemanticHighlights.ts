@@ -1,4 +1,5 @@
 import * as types from '../types'
+import logger from '../util/log';
 import { TextDocument, Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
 
 /**
@@ -11,6 +12,7 @@ import { TextDocument, Position } from 'vscode-languageserver-textdocument'; // 
  */
 export async function _flatHighlights(data: types.flattenedStmts, doc: TextDocument): Promise<types.highlightReturn> {
 
+	logger.log("Extracting semantic highlights...")
 	const ret: types.highlightReturn = [];
 
 	for (let i = 0; i < data.length; i++) {
@@ -18,7 +20,7 @@ export async function _flatHighlights(data: types.flattenedStmts, doc: TextDocum
 		let n = data[i]
 
 		if (n.parsed.includes("marginalia") || n.parsed.includes("comment") || n.parsed.includes("keyword") || n.parsed.includes("identifier") || n.parsed.includes("literal")) { // ensures we only look at nodes we want to color
-
+			logger.log(`Processing node for highlights: ${JSON.stringify(n)}`);
 			const fancystart = (n.coords.split("-"))[0].split(":")
 			const fancyend = (n.coords.split("-"))[1].split(":")
 			const start: Position = { line: parseInt(fancystart[0]), character: parseInt(fancystart[1]) }
@@ -88,10 +90,12 @@ export async function _flatHighlights(data: types.flattenedStmts, doc: TextDocum
 				})
 			}
 			}
-			catch(e) { console.log(e) }
+			catch(e) {
+				logger.log(`Error processing node for highlights: ${e}`);
+			}
 
 		}
 	}
-	// console.warn(ret)
+	logger.log(`Semantic highlights extracted: ${JSON.stringify(ret)}`);
 	return ret
 }

@@ -1,4 +1,6 @@
+import { log } from 'console';
 import * as types from '../types'
+import logger from '../util/log';
 
 /**
  * 
@@ -11,8 +13,8 @@ import * as types from '../types'
  * @returns A promise that resolves to a search return object containing the found data and its path.
  */
 export async function _flattenedSearchSingleTarget(data: types.flattenedStmts, targetParsed: string, targetId: String, findId: boolean = false): Promise<types.searchReturn> {
-	// console.log(targetParsed, " ", targetId, " ",  findId)
-	// console.log (data)
+	if (!data) return {data: false, path: ""};
+	// logger.log(`Searching for targetParsed: ${targetParsed}, targetId: ${targetId}, findId: ${findId}`);
 	for (let i = 0; i < data.length; i++) {
 		const node = data[i]
 		if (findId) {
@@ -32,6 +34,7 @@ export async function _flattenedSearchSingleTarget(data: types.flattenedStmts, t
 		}
 	}
 	// console.log('nothing found')
+	logger.log(`No match found for targetParsed: ${targetParsed}, targetId: ${targetId}, findId: ${findId}`);
 	return {
 		data: false,
 		path: ""
@@ -39,10 +42,12 @@ export async function _flattenedSearchSingleTarget(data: types.flattenedStmts, t
 }
 
 export async function _flattenedSearchMultiTarget(data: types.flattenedStmts, targetParsed: string = '', targetId: string = '', match: 'parsed' | 'id' | 'both'): Promise<types.multiSearchReturn> {
+	logger.log(`Searching for multiple targets with targetParsed: ${targetParsed}, targetId: ${targetId}, match: ${match}`);
 	const hits: types.multiSearchReturn = [];
 	if (!data) return [{data: hits, path: ""}];
 
 	for (var queue = 0; queue < data.length; queue++) {
+		// logger.log(`Checking node ${queue + 1}/${data.length}`);
 		const node = data[queue]
 		if (match === 'both') {
 			if ((node?.id.toLowerCase() === targetId.toLowerCase()) && node?.parsed.toLowerCase() === targetParsed.toLowerCase()) {
@@ -60,5 +65,6 @@ export async function _flattenedSearchMultiTarget(data: types.flattenedStmts, ta
 			}
 		}
 	}
+	logger.log(`Multi-target search found ${hits.length} hits for targetParsed: ${targetParsed}, targetId: ${targetId}, match: ${match}`);
 	return hits;
 }

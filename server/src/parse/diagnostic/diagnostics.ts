@@ -1,4 +1,5 @@
 import * as types from '../types'
+import logger from '../util/log';
 import { Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
 import { _flattenedSearchMultiTarget } from '../util/search'
  
@@ -18,11 +19,11 @@ const DiagnosticSeverity = {
  * @returns A promise that resolves to an array of diagnostic data objects.
  */
 export async function _flatDiagnostics(root: types.flattenedStmts): Promise<types.diagnosticReturn> {
-
+	logger.log("Extracting diagnostics...")
 	const hits: types.diagnosticReturn = []
 
 	if (!root) hits;
-
+	logger.log("Searching for errors in flattened statements...")
 	const errors = await (_flattenedSearchMultiTarget(root, "ERROR", "", 'parsed'))
 	// console.log(errors)
 	for (var i = 0; i < errors.length; i++) {
@@ -45,5 +46,6 @@ export async function _flatDiagnostics(root: types.flattenedStmts): Promise<type
 			});
 		}
 	}
+	logger.log(`Diagnostics extracted: ${JSON.stringify(hits)}`);
 	return hits
 }
