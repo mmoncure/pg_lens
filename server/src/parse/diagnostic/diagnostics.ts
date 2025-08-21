@@ -9,6 +9,14 @@ const DiagnosticSeverity = {
 	Warning: 2
 }
 
+
+/**
+ * 
+ * Extracts diagnostics from flattened statements.
+ * 
+ * @param root - Flattened statements to search through.
+ * @returns A promise that resolves to an array of diagnostic data objects.
+ */
 export async function _flatDiagnostics(root: types.flattenedStmts): Promise<types.diagnosticReturn> {
 
 	const hits: types.diagnosticReturn = []

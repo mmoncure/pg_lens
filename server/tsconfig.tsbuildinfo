@@ -1,1 +1,1 @@
-{"root":["./src/server.ts","./src/parse/main.ts","./src/parse/test.ts","./src/parse/types.ts","./src/parse/completion/completion.ts","./src/parse/diagnostic/diagnostics.ts","./src/parse/semantic/semantichighlights.ts","./src/parse/util/search.ts"],"version":"5.8.3"}
+{"root":["./src/server.ts","./src/parse/main.ts","./src/parse/test.ts","./src/parse/types.ts","./src/parse/completion/completion.ts","./src/parse/diagnostic/diagnostics.ts","./src/parse/semantic/semantichighlights.ts","./src/parse/util/init.ts","./src/parse/util/search.ts"],"version":"5.8.3"}

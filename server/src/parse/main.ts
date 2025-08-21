@@ -7,6 +7,7 @@ export { _flattenedSearchSingleTarget } from './util/search'
 export { _flatHighlights } from './semantic/SemanticHighlights'
 export { _flatDiagnostics } from './diagnostic/diagnostics'
 export { _createCompletions } from './completion/completion'
+export { _initpgtables } from './util/init'
 
 
 import { PoolClient } from 'pg'

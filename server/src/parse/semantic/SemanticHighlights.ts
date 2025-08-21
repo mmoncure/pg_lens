@@ -1,6 +1,14 @@
 import * as types from '../types'
 import { TextDocument, Position } from 'vscode-languageserver-textdocument'; // very useful, leaving in
 
+/**
+ * 
+ * Extracts semantic highlights from flattened statements.
+ * 
+ * @param data - Flattened statements to search through.
+ * @param doc - The text document containing the SQL code. 
+ * @returns A promise that resolves to an array of highlight data objects.
+ */
 export async function _flatHighlights(data: types.flattenedStmts, doc: TextDocument): Promise<types.highlightReturn> {
 
 	const ret: types.highlightReturn = [];

@@ -165,13 +165,17 @@ async function getPgData(scopeUri?: string) {
   }
 }
 
+let pgdata: PgLensSettings;
 
+(async () => {
+	pgdata = await getPgData();
+})
 const pool = async () => new Pool({
-	user: process.env.PG_USER || (await getPgData()).pguser,
-	password: process.env.PG_PASS || (await getPgData()).pgpass,
-	host: process.env.PG_HOST || (await getPgData()).pghost,
-	port: parseInt(process.env.PG_PORT || (await getPgData()).pgport || "5432"),
-	database: process.env.DB_NAME || (await getPgData()).dbname,
+	user: process.env.PG_USER || pgdata.pguser,
+	password: process.env.PG_PASS || pgdata.pgpass,
+	host: process.env.PG_HOST || pgdata.pghost,
+	port: parseInt(process.env.PG_PORT || pgdata.pgport || "5432"),
+	database: process.env.DB_NAME || pgdata.dbname,
 });
 
 let clientParse: PoolClient;
@@ -183,6 +187,10 @@ let clientCompletion: PoolClient;
 	// console.log(pool)
     clientParse = await (await pool()).connect();
 	clientCompletion = await (await pool()).connect();
+
+	// Initialize the database with necessary tables
+	await pg_lens._initpgtables(clientParse);
+
   } catch (err) {
     console.error('Failed to connect to Postgres', err);
     process.exit(1);
@@ -192,7 +200,7 @@ let clientCompletion: PoolClient;
 connection.languages.semanticTokens.on(async (params) => {
 	const builder = new SemanticTokensBuilder();
 	const doc = documents.get(params.textDocument.uri)!;
-	const ast = await pg_lens.parse(clientParse, doc.getText(),true, params.textDocument.uri)
+	const ast = await pg_lens.parse(clientParse, doc.getText(),false, params.textDocument.uri)
 
 	let highlights = await pg_lens._flatHighlights(ast, doc)
 	
@@ -232,7 +240,7 @@ async function validateTextDocument(params: DocumentDiagnosticParams, textDocume
 
 	const diagnostics: Diagnostic[] = [];
 	
-	const tree = await pg_lens.parse(clientParse, textDocument.getText(),true, params.textDocument.uri)
+	const tree = await pg_lens.parse(clientParse, textDocument.getText(),false, params.textDocument.uri)
 	// console.log(tree)
 	const diagHits = await pg_lens._flatDiagnostics(tree)
 
@@ -282,10 +290,10 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
 	let flatstmts;
 	
 	if (found) { // more than one statement, so use current
-		flatstmts = await pg_lens.parse(clientParse, doc.getText().substring(i+2,doc.offsetAt(params.position)),true,params.textDocument.uri)
+		flatstmts = await pg_lens.parse(clientParse, doc.getText().substring(i+2,doc.offsetAt(params.position)),false,params.textDocument.uri)
 	}
 	else {
-		flatstmts = await pg_lens.parse(clientParse,doc.getText(),true,params.textDocument.uri)
+		flatstmts = await pg_lens.parse(clientParse,doc.getText(),false,params.textDocument.uri)
 	}
 
 	const avail_completions = await pg_lens._createCompletions(flatstmts, clientCompletion)
