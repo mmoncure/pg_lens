@@ -76,9 +76,6 @@ logging checkbox
 
 You can do this after you have installed the extension by right clicking it and picking settings from the context menu.
 
-![Example of settings](https://github.com/mmoncure/pg_lens/blob/lsp-in/docs/settings.png?raw=true)
-![Example of secrets](https://github.com/mmoncure/pg_lens/blob/lsp-in/docs/secrets.png?raw=true)
-
 ## Releases
 
 Check out releases for the build .vsix extension!
