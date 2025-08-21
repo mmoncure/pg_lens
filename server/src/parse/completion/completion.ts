@@ -1,6 +1,6 @@
 import * as types from '../types'
 import { _flattenedSearchMultiTarget, _flattenedSearchSingleTarget } from '../util/search'
-import { PoolClient } from 'pg';
+import { Client } from 'pg';
 
 
 /**
@@ -11,7 +11,7 @@ import { PoolClient } from 'pg';
  * @param clientCompletion - The database client used for querying completions.
  * @returns A promise that resolves to an array of completion items.
  */
-export async function _createCompletions(flatstmts: types.flattenedStmts, clientCompletion: PoolClient): Promise<types.completionReturn> {
+export async function _createCompletions(flatstmts: types.flattenedStmts, clientCompletion: Client): Promise<types.completionReturn> {
 	
 	var retval: types.completionReturn = []
 

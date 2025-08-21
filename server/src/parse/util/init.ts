@@ -1,6 +1,6 @@
-import { PoolClient } from 'pg'
+import { Client } from 'pg'
 
-export async function _initpgtables(client: PoolClient): Promise<void> {
+export async function _initpgtables(client: Client): Promise<void> {
     // try {
     // await client.query('BEGIN')
     // await client.query(`

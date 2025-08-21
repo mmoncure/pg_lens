@@ -3,25 +3,43 @@ import * as ParserTS from 'tree-sitter'
 import * as SQL from '@maximjov/tree-sitter-sql'
 import * as types from './types'
 import * as fs from 'fs'
+import * as pg from 'pg'
 
-const parser = new ParserTS();
-parser.setLanguage(SQL);
+// const parser = new ParserTS();
+// parser.setLanguage(SQL);
+
+const client = new pg.Client({
+	host: 'localhost',
+	port: 5432,
+	password: 'admin',
+	database: 'postgres',
+	user: 'postgres',
+})
+
+
 
 async function m() {
+	console.log("Connecting to database...")
 
-	const tree = parser.parse(`
-		SELECT * from awesome.dog WHERE cat=5;	
-	`);
+	await client.query('BEGIN')
+	let v = await client.query(`insert into table_columns (dog) values ('cat') returning *;`)
+	await client.query('COMMIT')
 
-	const retval: types.flattenedStmts = []
+	console.log(v)
 
-	await main.dfsFlatten(tree.rootNode,"",retval)
+	// const tree = parser.parse(`
+	// 	SELECT * from awesome.dog WHERE cat=5;	
+	// `);
 
-	fs.writeFileSync('./test.json', JSON.stringify(retval,null,2))
+	// const retval: types.flattenedStmts = []
 
-	retval.forEach((i, idx) => {
-		console.log(i)
-	})
+	// await main.dfsFlatten(tree.rootNode,"",retval)
+
+	// fs.writeFileSync('./test.json', JSON.stringify(retval,null,2))
+
+	// retval.forEach((i, idx) => {
+	// 	console.log(i)
+	// })
 
 }
 

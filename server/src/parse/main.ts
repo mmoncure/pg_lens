@@ -10,7 +10,7 @@ export { _createCompletions } from './completion/completion'
 export { _initpgtables } from './util/init'
 
 
-import { PoolClient } from 'pg'
+import { Client } from 'pg'
 import * as dotenv from 'dotenv'
 
 import * as types from './types'
@@ -41,13 +41,13 @@ dotenv.config({ path: "/Users/maxim.jovanovic/Desktop/testlsp/.env" });
 /**
  * Parses the given SQL document, flattens its syntax tree, and optionally inserts table and function metadata into the database.
  *
- * @param client - PostgreSQL PoolClient for DB operations.
+ * @param client - PostgreSQL Client for DB operations.
  * @param doc - SQL document string to parse.
  * @param file_path - Path of the file being parsed.
  * @param outType - If true, performs database operations; otherwise, only parses the document.
  * @returns Flattened array of parsed statements.
  */
-export async function parse(client: PoolClient, doc: string, outType: boolean, file_path: string) {
+export async function parse(client: Client, doc: string, outType: boolean, file_path: string) {
 
 	let munchedSQL: types.flattenedStmts = []
 
@@ -146,11 +146,11 @@ async function _collectNodes(nodes: types.flattenedStmts, match: string) {
 /**
  * Inserts table column metadata into the database from flattened statement nodes.
  *
- * @param client - PostgreSQL PoolClient for DB operations.
+ * @param client - PostgreSQL Client for DB operations.
  * @param nodes - Array of flattened statement objects.
  * @param file_path - Path of the file being parsed.
  */
-async function _insertTableColumns(client: PoolClient, nodes: types.flattenedStmts, file_path: string) {
+async function _insertTableColumns(client: Client, nodes: types.flattenedStmts, file_path: string) {
 
 		const columns = await _collectNodes(nodes, "column_definition")
 		if (!columns) return;
@@ -242,11 +242,11 @@ async function _insertTableColumns(client: PoolClient, nodes: types.flattenedStm
 /**
  * Inserts function argument metadata into the database from flattened statement nodes.
  *
- * @param client - PostgreSQL PoolClient for DB operations.
+ * @param client - PostgreSQL Client for DB operations.
  * @param nodes - Array of flattened statement objects.
  * @param file_path - Path of the file being parsed.
  */
-async function _insertFunctionColumns(client: PoolClient, nodes: types.flattenedStmts, file_path: string) {
+async function _insertFunctionColumns(client: Client, nodes: types.flattenedStmts, file_path: string) {
 
 		const args = await _collectNodes(nodes, "function_argument")
 		if (!args) return;
@@ -402,7 +402,7 @@ async function _insertFunctionColumns(client: PoolClient, nodes: types.flattened
  * @param munchedSQL 
  * @param defaultSchema 
  */
-// async function insertTableColumns(client: PoolClient, munchedSQL: any, defaultSchema = 'public') {
+// async function insertTableColumns(client: Client, munchedSQL: any, defaultSchema = 'public') {
 // 	if (!munchedSQL.splitstmts || !munchedSQL.splitstmts.length) return;
 
 // 	const stmts = munchedSQL.splitstmts[0].nextstmt;
