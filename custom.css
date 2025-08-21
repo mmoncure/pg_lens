@@ -1,0 +1,32 @@
+:root {
+  --theme-hue: 200
+  --theme-color: hsl(var(--theme-hue), 90%, 55%)
+  --base-background-color: #0b1220
+  --base-color: #e5e7eb
+  --sidebar-width: 290px
+  --content-max-width: 900px
+}
+
+body {
+    background-color: #111111 !important;  
+}
+.sidebar {
+    background-color: #111111 !important;  
+    color: var(--base-color) !important;
+    border-right: 1px solid #e5e7eb !important;
+}
+.content {
+    background-color: #111111 !important;  
+    color: var(--base-color) !important;  
+}
+.sidebar-toggle {
+    background-color: #111111 !important;  
+    color: var(--base-color) !important;  
+}
+.sidebar-toggle-button span {
+    background-color: #e5e7eb !important;  
+    color: var(--base-color) !important;  
+}
+img {
+    max-width: 50% !important;
+}
