@@ -6,4 +6,4 @@ An unpolished and unfinished pgsql LSP built with Treesitter and pgsql grammar f
 
 because @mmoncure wanted me to; some fancy mission statement probably belongs around here.
 
-[Demo video](demo.gif)
+![Demo video](demo.gif)
