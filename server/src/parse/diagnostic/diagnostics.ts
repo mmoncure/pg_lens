@@ -10,7 +10,6 @@ const DiagnosticSeverity = {
 	Warning: 2
 }
 
-
 /**
  * 
  * Extracts diagnostics from flattened statements.

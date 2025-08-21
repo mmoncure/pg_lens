@@ -3,7 +3,7 @@ class loggerClass {
         this.toLog = undefined;
     }
     
-    toLog: boolean | undefined;
+    toLog?: boolean;
     
     setLog(toLog: boolean) {
         console.log('( logger ): Logger set with toLog:', toLog);

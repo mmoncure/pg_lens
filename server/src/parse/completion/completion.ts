@@ -65,10 +65,12 @@ export async function _createCompletions(flatstmts: types.flattenedStmts, client
 			})
 			functionQuery = `SELECT DISTINCT function_name FROM function_args`;
 			tableQuery = `SELECT column_name FROM table_columns`;
-		} else if (check_wh && table_ex) {
+		} 
+		else if (check_wh && table_ex) {
 			tableQuery = `SELECT column_name FROM table_columns WHERE table_name = $1`;
 			tableParams = [table_ex];
-		} else if (check_fr) {
+		} 
+		else if (check_fr) {
 			tableQuery = `SELECT DISTINCT table_name FROM table_columns`;
 			key = 'table_name';
 		}
@@ -100,7 +102,7 @@ export async function _createCompletions(flatstmts: types.flattenedStmts, client
 	for (let i = 0; i < rows.length; i++) {
 		retval.push({
 			label: `${Object.values(rows[i])[0]}: ${Object.keys(rows[i])[0]}` as string,
-			detail: key==='table_name' ? 'All possible relations' : 'none for now',
+			detail: key === 'table_name' ? 'All possible relations' : 'none for now',
 			insertText: Object.values(rows[i])[0] as string,
 		});
 	};

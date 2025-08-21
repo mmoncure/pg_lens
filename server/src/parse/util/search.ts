@@ -1,4 +1,3 @@
-import { log } from 'console';
 import * as types from '../types'
 import logger from '../util/log';
 
