@@ -76,8 +76,8 @@ logging checkbox
 
 You can do this after you have installed the extension by right clicking it and picking settings from the context menu.
 
-![Example of settings](settings.png)
-![Example of secrets](secrets.png)
+![Example of settings]([settings.png](https://github.com/mmoncure/pg_lens/blob/lsp-in/docs/settings.png?raw=true))
+![Example of secrets]([secrets.png](https://github.com/mmoncure/pg_lens/blob/lsp-in/docs/secrets.png?raw=true))
 
 ## Releases
 
