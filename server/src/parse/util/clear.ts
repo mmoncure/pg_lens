@@ -2,7 +2,7 @@ import { Client } from 'pg'
 import logger from './log'
 import { log } from 'console'
 
-export async function _initpgtables(client: Client): Promise<void> {
+export async function _clearDbTables(client: Client): Promise<void> {
     // logger.log('Initializing PostgreSQL tables if they do not exist...')
     // try {
     //     await client.query('BEGIN')

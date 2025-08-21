@@ -106,9 +106,13 @@ connection.onInitialized(() => {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
+	console.log(hasWorkspaceFolderCapability, " ###### HAS WORKSPACE")
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
 			logger.log('Workspace folder change event received.');
+			pg_lens._clearDbTables(clientParse).then(() => {
+				logger.log('Cleared database tables after workspace folder change.');
+			})
 		});
 	}
 });
@@ -202,7 +206,7 @@ let clientCompletion: pg.Client;
 	logger.log("check check");
 
 	// Initialize the database with necessary tables
-	await pg_lens._initpgtables(clientParse);
+	await pg_lens._clearDbTables(clientParse);
 
 	console.log('Pre-init: Postgres connection established and logger initialized');
 

@@ -7,7 +7,7 @@ export { _flattenedSearchSingleTarget } from './util/search'
 export { _flatHighlights } from './semantic/SemanticHighlights'
 export { _flatDiagnostics } from './diagnostic/diagnostics'
 export { _createCompletions } from './completion/completion'
-export { _initpgtables } from './util/init'
+export { _clearDbTables } from './util/clear'
 
 
 import { Client } from 'pg'
@@ -17,7 +17,7 @@ import logger from './util/log';
 import * as types from './types'
 import * as ParserTS from 'tree-sitter'
 import * as SQL from '@maximjov/tree-sitter-sql'
-import { log } from 'console'
+import * as fs from 'fs'
 
 const parser = new ParserTS();
 
@@ -159,7 +159,12 @@ async function _insertTableColumns(client: Client, nodes: types.flattenedStmts, 
 		const relations = await _collectNodes(nodes, "object_reference") // need to implement going forward
 		if (!relations) return;
 
+		// console.log('writing to')
+		// fs.writeFileSync('node.json', JSON.stringify(nodes, null, 2))
+
 		for (const col of columns) {
+
+
 
 			let relation: any
 
@@ -225,17 +230,22 @@ async function _insertTableColumns(client: Client, nodes: types.flattenedStmts, 
 
 			const colDefault = hasDefault >= 0 && absoluteDefault >= 0 ? nodes[absoluteDefault + 1].id : null;
 			logger.log('Done generating column metadata, inserting into database...');
-			try {
-				/*
-					INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
-					VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
-				*/
-				let g = await client.query(tableInsertText, ["public", relation, colName, typeNode.id, hasNotNull, colDefault, col.id, startpos, endpos, file_path]);
-				logger.log(`Inserted column ${colName} for table ${relation}: ${JSON.stringify(g)}`);
+			if (!col.path.includes("create_function")) {
+				try {
+					/*
+						INSERT INTO "table_columns" (table_schema, table_name, column_name, column_type, is_not_null, column_default, stmt, start_position, end_position)
+						VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
+					*/
+					let g = await client.query(tableInsertText, ["public", relation, colName, typeNode.id, hasNotNull, colDefault, col.id, startpos, endpos, file_path]);
+					logger.log(`Inserted column ${colName} for table ${relation}: ${JSON.stringify(g)}`);
+				}
+				catch (e: any) {
+					// console.log("Probably an SQL error, but logged nonetheless")
+					logger.log(`Error inserting column ${colName} for table ${relation}: ${e}`);
+				}
 			}
-			catch (e: any) {
-				// console.log("Probably an SQL error, but logged nonetheless")
-				logger.log(`Error inserting column ${colName} for table ${relation}: ${e}`);
+			else {
+				logger.log(`Skipping column ${colName} for function ${relation} as it is not a table column.`);
 			}
 		}
 }

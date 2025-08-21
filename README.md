@@ -3,6 +3,10 @@ To specify, this branch is built around the vscode lsp extension source; do not 
 
 Uses Treesitter and pgsql grammar forked from @DerekStride. You can find and contribute to that [here](https://github.com/maximjov/tree-sitter-sql).
 
+## Demo
+
+![Demo Gif](https://github.com/mmoncure/pg_lens/blob/lsp-in/docs/demo.gif?raw=true)
+
 ## Install
 
 ### Database Setup
