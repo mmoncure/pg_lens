@@ -1,5 +1,10 @@
 # PG_Lens
-To specify, this branch is built around the vscode lsp extension source; do not expect it to function outside of vscode.
+
+## THESE ARE NOT DOCS! You can check those out [here 😊](https://maximjov.github.io/#/)
+
+
+
+This branch is built around the vscode lsp extension source; do not expect it to function outside of vscode.
 
 Uses Treesitter and pgsql grammar forked from @DerekStride. You can find and contribute to that [here](https://github.com/maximjov/tree-sitter-sql).
 
@@ -79,9 +84,6 @@ logging checkbox
 ```
 
 You can do this after you have installed the extension by right clicking it and picking settings from the context menu.
-
-![Example of settings](settings.png)
-![Example of secrets](secrets.png)
 
 ## Releases
 
