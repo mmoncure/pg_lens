@@ -1,4 +1,9 @@
 # PG_Lens
+
+## THESE ARE NOT DOCS! You can check those out [here 😊](https://maximjov.github.io/#/)
+
+
+
 To specify, this branch is built around the vscode lsp extension source; do not expect it to function outside of vscode.
 
 Uses Treesitter and pgsql grammar forked from @DerekStride. You can find and contribute to that [here](https://github.com/maximjov/tree-sitter-sql).
