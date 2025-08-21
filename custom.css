@@ -28,5 +28,5 @@ body {
     color: var(--base-color) !important;  
 }
 img {
-    max-width: 50% !important;
+    max-width: 400px !important;
 }
