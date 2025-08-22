@@ -72,15 +72,14 @@ ALTER TABLE IF EXISTS public.function_args
 
 ### Secrets
 
-Set your secrets in the settings for the extension. You'll need to set:
+Set your secrets in the settings after you have the extension installed by right clicking it and picking settings from the context menu. You'll need to set:
 
 ```
-postgres username
-postgres password
-postgres host
-postgres port
-database name
-logging checkbox
+postgres    username    (string)
+postgres    password    (string)
+postgres    host        (string)
+postgres    port        (string)
+database    name        (string)
+logging     checkbox    (boolean)
 ```
 
-You can do this after you have installed the extension by right clicking it and picking settings from the context menu.
