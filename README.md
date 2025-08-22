@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS public.table_columns
     stmt text COLLATE pg_catalog."default" NOT NULL,
     start_position text COLLATE pg_catalog."default",
     end_position text COLLATE pg_catalog."default",
-    path_file character varying(125) COLLATE pg_catalog."default"
+    path_file text COLLATE pg_catalog."default"
 )
 
 TABLESPACE pg_default;
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS public.function_args
     stmt text COLLATE pg_catalog."default" NOT NULL,
     start_position text COLLATE pg_catalog."default",
     end_position text COLLATE pg_catalog."default",
-    path_file character varying(125) COLLATE pg_catalog."default"
+    path_file text COLLATE pg_catalog."default"
 )
 
 TABLESPACE pg_default;
