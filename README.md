@@ -6,7 +6,7 @@ Uses Treesitter and a pgsql grammar forked from @DerekStride. You can find and c
 
 ## Release
 
-You can download the Alpha release [here]https://github.com/mmoncure/pg_lens/releases/tag/v1.0-alpha.1
+You can download the Alpha release [here](https://github.com/mmoncure/pg_lens/releases/tag/v1.0-alpha.1)
 
 ## Demo
 
