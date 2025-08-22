@@ -83,3 +83,48 @@ database    name        (string)
 logging     checkbox    (boolean)
 ```
 
+## ToDo (soon lol)
+
+### -- server --
+
+1. move coords logic to postgers and index
+  1a. improve tables/columns
+  1b. rewrite search to exploit
+
+
+2. auto doc to add coment to storage
+  2a. a comment columns to things
+  /* this table documents things */
+  CREATE TABLE foo
+
+3. workspace to be added to all things
+
+4. better handling of schemas (assume public)
+  4a. treat null as matching
+
+/*
+ * meta commands:
+ ** ##schema=public
+ ** ##database=foo
+ */
+
+ 5. graceful failure on bad db connection.
+   1. log connection to database at url username@host/dbname
+   2. log db error
+   3. process.exit()
+
+ 6. better db initialization
+   6a. ask for schema
+   6b. create if not exists then tables etc.
+   6c. mark schema version
+
+
+### -- grammar --
+
+1. nested comments 
+2. issues with greediness (most concerns)
+3. procedures (CREATE PROCEDURE)
+4. DP command
+5. procedure / function guts
+6. VIEWS (easy?)
+7. client meta
